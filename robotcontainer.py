@@ -10,6 +10,7 @@ from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 
 from generated.tuner_constants import TunerConstants
+from subsystems.launcher import Launcher
 from telemetry import Telemetry
 
 from phoenix6 import swerve
@@ -53,6 +54,7 @@ class RobotContainer:
         self._joystick = CommandXboxController(0)
 
         self.drivetrain = TunerConstants.create_drivetrain()
+        self.launcher = Launcher(47)
 
         # Configure the button bindings
         self.configureButtonBindings()
@@ -118,6 +120,19 @@ class RobotContainer:
         self._joystick.leftBumper().onTrue(
             self.drivetrain.runOnce(self.drivetrain.seed_field_centric)
         )
+
+        # Launcher controls
+        # Right trigger: variable speed based on trigger position
+        self._joystick.rightTrigger(0.1).whileTrue(
+            self.launcher.run(
+                lambda: self.launcher.set_speed(self._joystick.getRightTriggerAxis())
+            )
+        ).onFalse(self.launcher.runOnce(self.launcher.stop))
+
+        # Right bumper: full speed while held
+        self._joystick.rightBumper().whileTrue(
+            self.launcher.runOnce(lambda: self.launcher.set_speed(1.0))
+        ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
         self.drivetrain.register_telemetry(
             lambda state: self._logger.telemeterize(state)

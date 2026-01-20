@@ -11,6 +11,8 @@ RobotPy swerve drivetrain project using CTRE Phoenix 6 hardware.
 | A button (hold) | Brake mode |
 | B button (hold) | Point wheels at joystick direction |
 | Left bumper | Reset field-centric heading |
+| Right trigger | Launcher variable speed |
+| Right bumper (hold) | Launcher full speed |
 | Back + Y | SysId dynamic forward |
 | Back + X | SysId dynamic reverse |
 | Start + Y | SysId quasistatic forward |
