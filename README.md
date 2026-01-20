@@ -1,6 +1,8 @@
 # Swerve Test 2026
 
 RobotPy swerve drivetrain project using CTRE Phoenix 6 hardware.
+## Motor Ids
+- 47 is launcher
 
 ## Robot Controls
 
