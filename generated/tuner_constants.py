@@ -89,8 +89,8 @@ class TunerConstants:
     _steer_gear_ratio = 21.428571428571427
     _wheel_radius: units.meter = inchesToMeters(4)
 
-    _invert_left_side = False
-    _invert_right_side = True
+    _invert_left_side = True
+    _invert_right_side = False
 
     _pigeon_id = 0
 
@@ -142,8 +142,8 @@ class TunerConstants:
     _front_left_steer_motor_id = 6
     _front_left_encoder_id = 14
     _front_left_encoder_offset: units.rotation = -0.439697265625
-    _front_left_steer_motor_inverted = False
-    _front_left_encoder_inverted = True
+    _front_left_steer_motor_inverted = True
+    _front_left_encoder_inverted = False
 
     _front_left_x_pos: units.meter = inchesToMeters(15)
     _front_left_y_pos: units.meter = inchesToMeters(15)
@@ -153,8 +153,8 @@ class TunerConstants:
     _front_right_steer_motor_id = 5
     _front_right_encoder_id = 13
     _front_right_encoder_offset: units.rotation = 0.218505859375
-    _front_right_steer_motor_inverted = False
-    _front_right_encoder_inverted = True
+    _front_right_steer_motor_inverted = True
+    _front_right_encoder_inverted = False
 
     _front_right_x_pos: units.meter = inchesToMeters(15)
     _front_right_y_pos: units.meter = inchesToMeters(-15)
@@ -164,8 +164,8 @@ class TunerConstants:
     _back_left_steer_motor_id = 7
     _back_left_encoder_id = 15
     _back_left_encoder_offset: units.rotation = 0.141357421875
-    _back_left_steer_motor_inverted = False
-    _back_left_encoder_inverted = True
+    _back_left_steer_motor_inverted = True
+    _back_left_encoder_inverted = False
 
     _back_left_x_pos: units.meter = inchesToMeters(-15)
     _back_left_y_pos: units.meter = inchesToMeters(15)
@@ -175,8 +175,8 @@ class TunerConstants:
     _back_right_steer_motor_id = 2
     _back_right_encoder_id = 16
     _back_right_encoder_offset: units.rotation = 0.322509765625
-    _back_right_steer_motor_inverted = False
-    _back_right_encoder_inverted = True
+    _back_right_steer_motor_inverted = True
+    _back_right_encoder_inverted = False
 
     _back_right_x_pos: units.meter = inchesToMeters(-15)
     _back_right_y_pos: units.meter = inchesToMeters(-15)
@@ -322,11 +322,11 @@ class TunerSwerveDrivetrain(
                                             CAN FD, and 100 Hz on CAN 2.0.
         :type odometry_update_frequency:    units.hertz
         :param odometry_standard_deviation: The standard deviation for odometry calculation
-                                            in the form [x, y, theta]ᵀ, with units in meters
+                                            in the form [x, y, theta]áµ€, with units in meters
                                             and radians
         :type odometry_standard_deviation:  tuple[float, float, float]
         :param vision_standard_deviation:   The standard deviation for vision calculation
-                                            in the form [x, y, theta]ᵀ, with units in meters
+                                            in the form [x, y, theta]áµ€, with units in meters
                                             and radians
         :type vision_standard_deviation:    tuple[float, float, float]
         :param modules:                     Constants for each specific module
@@ -363,4 +363,4 @@ class TunerSwerveDrivetrain(
             arg1,
             arg2,
             arg3,
-        )
+        )
