@@ -48,8 +48,9 @@ The PDH has 20 high-current channels (0-19, up to 40A each) and 3 low-current sw
 | CAN ID | Device | Type | Location |
 |--------|--------|------|----------|
 | 1 | Power Distribution Hub | REV-11-1850 | Main board |
-| 30 | TalonFX | Motor controller | Test motor |
 | 2 | Pigeon 2 | IMU | TBD |
+| 30 | TalonFX | Motor controller | Test motor |
+
 
 ## Network Devices
 

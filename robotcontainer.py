@@ -54,7 +54,7 @@ class RobotContainer:
         self._joystick = CommandXboxController(0)
 
         self.drivetrain = TunerConstants.create_drivetrain()
-        self.launcher = Launcher(47)
+        self.launcher = Launcher()
 
         # Configure the button bindings
         self.configureButtonBindings()
@@ -131,7 +131,7 @@ class RobotContainer:
 
         # Right bumper: full speed while held
         self._joystick.rightBumper().whileTrue(
-            self.launcher.runOnce(lambda: self.launcher.set_speed(1.0))
+            self.launcher.run(lambda: self.launcher.set_speed(0.5))
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
         self.drivetrain.register_telemetry(
