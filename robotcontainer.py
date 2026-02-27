@@ -11,7 +11,7 @@ from commands2.sysid import SysIdRoutine
 
 from generated.tuner_constants import TunerConstants
 from subsystems.launcher import Launcher
-from telemetry import Telemetry
+from telemetry.swerve_telemetry import SwerveTelemetry
 
 from phoenix6 import swerve
 from wpilib import DriverStation
@@ -49,7 +49,7 @@ class RobotContainer:
         self._brake = swerve.requests.SwerveDriveBrake()
         self._point = swerve.requests.PointWheelsAt()
 
-        self._logger = Telemetry(self._max_speed)
+        self._logger = SwerveTelemetry(self._max_speed)
 
         self._joystick = CommandXboxController(0)
 
