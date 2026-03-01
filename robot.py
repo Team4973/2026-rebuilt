@@ -9,6 +9,8 @@ import wpilib
 import commands2
 import typing
 
+from controls.powerdistribution.PowerDistributionHelper import PowerDistributionHelper
+from controls.powerdistribution.PowerDistributionNT import PowerDistributionNT
 from robotcontainer import RobotContainer
 
 from phoenix6 import HootAutoReplay
@@ -38,6 +40,10 @@ class MyRobot(commands2.TimedCommandRobot):
             .with_timestamp_replay()
             .with_joystick_replay()
         )
+        self._power_distribution_helper = PowerDistributionHelper(can_id=1)
+        self._power_distribution_nt = PowerDistributionNT(
+            self._power_distribution_helper
+        )
 
     def robotPeriodic(self) -> None:
         """This function is called every 20 ms, no matter the mode. Use this for items like diagnostics
@@ -52,7 +58,7 @@ class MyRobot(commands2.TimedCommandRobot):
         # and running subsystem periodic() methods.  This must be called from the robot's periodic
         # block in order for anything in the Command-based framework to work.
         commands2.CommandScheduler.getInstance().run()
-        self.container.update_telemetry()
+        self._power_distribution_nt.update()
 
     def disabledInit(self) -> None:
         """This function is called once each time the robot enters Disabled mode."""

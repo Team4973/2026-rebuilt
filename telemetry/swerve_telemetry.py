@@ -5,7 +5,7 @@ from wpimath.geometry import Pose2d
 from wpimath.kinematics import ChassisSpeeds, SwerveModulePosition, SwerveModuleState
 
 
-class SwerveTelemetry:
+class Telemetry:
     def __init__(self, max_speed: units.meters_per_second):
         """
         Construct a telemetry object with the specified max speed of the robot.

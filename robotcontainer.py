@@ -11,7 +11,8 @@ from commands2.sysid import SysIdRoutine
 
 from generated.tuner_constants import TunerConstants
 from subsystems.launcher import Launcher
-from telemetry.swerve_telemetry import SwerveTelemetry
+from subsystems.feeder import feeder 
+from telemetry.swerve_telemetry import Telemetry
 
 from phoenix6 import swerve
 from wpilib import DriverStation
@@ -49,12 +50,14 @@ class RobotContainer:
         self._brake = swerve.requests.SwerveDriveBrake()
         self._point = swerve.requests.PointWheelsAt()
 
-        self._logger = SwerveTelemetry(self._max_speed)
+        self._logger = Telemetry(self._max_speed)
 
         self._joystick = CommandXboxController(0)
 
         self.drivetrain = TunerConstants.create_drivetrain()
+
         self.launcher = Launcher()
+        self.feeder = feeder()
 
         # Configure the button bindings
         self.configureButtonBindings()
@@ -125,7 +128,7 @@ class RobotContainer:
         # Right trigger: variable speed based on trigger position
         self._joystick.rightTrigger(0.1).whileTrue(
             self.launcher.run(
-                lambda: self.launcher.set_speed(self._joystick.getRightTriggerAxis())
+                lambda: self.launcher.set_speed(0.1)
             )
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
@@ -133,6 +136,17 @@ class RobotContainer:
         self._joystick.rightBumper().whileTrue(
             self.launcher.run(lambda: self.launcher.set_speed(0.5))
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
+
+        self._joystick.leftTrigger(0.1).whileTrue(
+            self.feeder.run(
+                lambda: self.feeder.set_speed(0.1)
+            )
+        ).onFalse(self.feeder.runOnce(self.feeder.stop))
+
+        # Right bumper: full speed while held
+        self._joystick.leftBumper().whileTrue(
+            self.feeder.run(lambda: self.launcher.set_speed(0.5))
+        ).onFalse(self.feeder.runOnce(self.feeder.stop))
 
         self.drivetrain.register_telemetry(
             lambda state: self._logger.telemeterize(state)
