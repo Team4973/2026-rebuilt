@@ -17,6 +17,7 @@ from phoenix6 import swerve
 from wpilib import DriverStation
 from wpimath.geometry import Rotation2d
 from wpimath.units import rotationsToRadians
+from wpimath.filter import SlewRateLimiter
 
 
 class RobotContainer:
@@ -28,6 +29,11 @@ class RobotContainer:
     """
 
     def __init__(self) -> None:
+        self.x_limiter = SlewRateLimiter(3)
+        self.y_limiter = SlewRateLimiter(3)
+        self.rot_limiter = SlewRateLimiter(2)
+
+
         self._max_speed = (
             1.0 * TunerConstants.speed_at_12_volts
         )  # speed_at_12_volts desired top speed
@@ -73,13 +79,13 @@ class RobotContainer:
             self.drivetrain.apply_request(
                 lambda: (
                     self._drive.with_velocity_x(
-                        -self._joystick.getLeftY() * self._max_speed
+                        -self.x_limiter.calculate(self._joystick.getLeftY() * self._max_speed)
                     )  # Drive forward with negative Y (forward)
                     .with_velocity_y(
-                        -self._joystick.getLeftX() * self._max_speed
+                        -self.y_limiter.calculate(self._joystick.getLeftX() * self._max_speed)
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
-                        -self._joystick.getRightX() * self._max_angular_rate
+                        -self.rot_limiter.calculate(self._joystick.getRightX() * self._max_angular_rate)
                     )  # Drive counterclockwise with negative X (left)
                 )
             )
