@@ -67,21 +67,17 @@ class RobotContainer:
 
     def configureDpadBindings(self):
         """
-        This defines the DPad on the controller for the climber
+        This defines the DPad on the controller for the climber.
+        povUp()/povDown() return Trigger objects — use whileTrue/onFalse
+        to run commands while held and stop on release.
         """
-        # The POV (D-pad) returns angles: 0 (Up), 90 (Right), 180 (Down), 270 (Left)
-        # It returns -1 if nothing is pressed.
-        dpad = self._joystick
+        self._joystick.povUp().whileTrue(
+            self.climber.run(lambda: self.climber.set_speed(0.5))
+        ).onFalse(self.climber.runOnce(self.climber.stop))
 
-        if dpad.povUp() == 0:
-            # D-pad UP: Move motor forward at 50%
-            self.climber.set_control(self.output.with_output(0.5))
-        elif dpad.povDown() == 180:
-            # D-pad DOWN: Move motor backward at 50%
-            self.climber.set_control(self.output.with_output(-0.5))
-        else:
-            # Nothing pressed: Stop motor
-            self.climber.set_control(self.output.with_output(0))
+        self._joystick.povDown().whileTrue(
+            self.climber.run(lambda: self.climber.set_speed(-0.5))
+        ).onFalse(self.climber.runOnce(self.climber.stop))
 
 
     def configureButtonBindings(self) -> None:
