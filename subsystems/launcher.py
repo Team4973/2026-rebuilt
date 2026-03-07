@@ -14,7 +14,7 @@ class Launcher(Subsystem):
     def set_speed(self, speed: float) -> None:
         """Set motor speed (-1.0 to 1.0)."""
         self._launcher_motor.set_control(self._duty_cycle.with_output(speed))
-        self._feeder_motor.set_control(self. _duty_cycle.with_output(-speed))
+        self._feeder_motor.set_control(self._duty_cycle.with_output(-speed))
 
     def stop(self) -> None:
         """Stop the motor."""
