@@ -11,6 +11,7 @@ from commands2.sysid import SysIdRoutine
 
 from generated.tuner_constants import TunerConstants
 from subsystems.launcher import Launcher
+from subsystems.vision import Vision
 from telemetry import telemetry
 
 from phoenix6 import swerve
@@ -55,6 +56,7 @@ class RobotContainer:
 
         self.drivetrain = TunerConstants.create_drivetrain()
         self.launcher = Launcher(47)
+        self.vision = Vision(self.drivetrain)
 
         # Configure the button bindings
         self.configureButtonBindings()
