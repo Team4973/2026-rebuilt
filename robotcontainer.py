@@ -10,8 +10,10 @@ from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 
 from generated.tuner_constants import TunerConstants
+from subsystems.climber import Climber
 from subsystems.launcher import Launcher
 from telemetry import telemetry
+from robot_config import CLIMBER_ENABLED, LAUNCHER_ENABLED, ClimberConfig
 
 from phoenix6 import swerve
 from wpilib import DriverStation
@@ -54,10 +56,29 @@ class RobotContainer:
         self._joystick = CommandXboxController(0)
 
         self.drivetrain = TunerConstants.create_drivetrain()
-        self.launcher = Launcher(47)
 
-        # Configure the button bindings
-        self.configureButtonBindings()
+        if CLIMBER_ENABLED:
+            self.climber = Climber(ClimberConfig.CAN_ID)
+            self.configureDpadBindings()
+
+        if LAUNCHER_ENABLED:
+            self.launcher = Launcher(47)
+            self.configureButtonBindings()
+
+    def configureDpadBindings(self):
+        """
+        This defines the DPad on the controller for the climber.
+        povUp()/povDown() return Trigger objects — use whileTrue/onFalse
+        to run commands while held and stop on release.
+        """
+        self._joystick.povUp().whileTrue(
+            self.climber.run(lambda: self.climber.set_speed(ClimberConfig.SPEED_UP))
+        ).onFalse(self.climber.runOnce(self.climber.stop))
+
+        self._joystick.povDown().whileTrue(
+            self.climber.run(lambda: self.climber.set_speed(ClimberConfig.SPEED_DOWN))
+        ).onFalse(self.climber.runOnce(self.climber.stop))
+
 
     def configureButtonBindings(self) -> None:
         """
