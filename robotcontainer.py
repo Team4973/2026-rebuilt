@@ -13,7 +13,7 @@ from generated.tuner_constants import TunerConstants
 from subsystems.climber import Climber
 from subsystems.launcher import Launcher
 from telemetry import telemetry
-from robot_config import CLIMBER_ENABLED, LAUNCHER_ENABLED
+from robot_config import CLIMBER_ENABLED, LAUNCHER_ENABLED, ClimberConfig
 
 from phoenix6 import swerve
 from wpilib import DriverStation
@@ -58,7 +58,7 @@ class RobotContainer:
         self.drivetrain = TunerConstants.create_drivetrain()
 
         if CLIMBER_ENABLED:
-            self.climber = Climber(34)
+            self.climber = Climber(ClimberConfig.CAN_ID)
             self.configureDpadBindings()
 
         if LAUNCHER_ENABLED:
@@ -72,11 +72,11 @@ class RobotContainer:
         to run commands while held and stop on release.
         """
         self._joystick.povUp().whileTrue(
-            self.climber.run(lambda: self.climber.set_speed(0.5))
+            self.climber.run(lambda: self.climber.set_speed(ClimberConfig.SPEED_UP))
         ).onFalse(self.climber.runOnce(self.climber.stop))
 
         self._joystick.povDown().whileTrue(
-            self.climber.run(lambda: self.climber.set_speed(-0.5))
+            self.climber.run(lambda: self.climber.set_speed(ClimberConfig.SPEED_DOWN))
         ).onFalse(self.climber.runOnce(self.climber.stop))
 
 
