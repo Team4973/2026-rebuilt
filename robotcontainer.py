@@ -13,6 +13,7 @@ from generated.tuner_constants import TunerConstants
 from subsystems.climber import Climber
 from subsystems.launcher import Launcher
 from telemetry import telemetry
+from robot_config import CLIMBER_ENABLED, LAUNCHER_ENABLED
 
 from phoenix6 import swerve
 from wpilib import DriverStation
@@ -55,15 +56,14 @@ class RobotContainer:
         self._joystick = CommandXboxController(0)
 
         self.drivetrain = TunerConstants.create_drivetrain()
-     #   self.launcher = Launcher(47)
-      
 
-        # Configure the button bindings for launcher
-      #  self.configureButtonBindings()
+        if CLIMBER_ENABLED:
+            self.climber = Climber(34)
+            self.configureDpadBindings()
 
-        # Initialize Climber
-        self.climber = Climber(34)
-        self.configureDpadBindings()
+        if LAUNCHER_ENABLED:
+            self.launcher = Launcher(47)
+            self.configureButtonBindings()
 
     def configureDpadBindings(self):
         """
