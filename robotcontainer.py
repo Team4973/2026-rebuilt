@@ -10,6 +10,7 @@ from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 
 from generated.tuner_constants import TunerConstants
+from subsystems.climber import Climber
 from subsystems.launcher import Launcher
 from telemetry import telemetry
 
@@ -54,10 +55,34 @@ class RobotContainer:
         self._joystick = CommandXboxController(0)
 
         self.drivetrain = TunerConstants.create_drivetrain()
-        self.launcher = Launcher(47)
+     #   self.launcher = Launcher(47)
+      
 
-        # Configure the button bindings
-        self.configureButtonBindings()
+        # Configure the button bindings for launcher
+      #  self.configureButtonBindings()
+
+        # Initialize Climber
+        self.climber = Climber(34)
+        self.configureDpadBindings()
+
+    def configureDpadBindings(self):
+        """
+        This defines the DPad on the controller for the climber
+        """
+        # The POV (D-pad) returns angles: 0 (Up), 90 (Right), 180 (Down), 270 (Left)
+        # It returns -1 if nothing is pressed.
+        dpad = self._joystick
+
+        if dpad.povUp() == 0:
+            # D-pad UP: Move motor forward at 50%
+            self.climber.set_control(self.output.with_output(0.5))
+        elif dpad.povDown() == 180:
+            # D-pad DOWN: Move motor backward at 50%
+            self.climber.set_control(self.output.with_output(-0.5))
+        else:
+            # Nothing pressed: Stop motor
+            self.climber.set_control(self.output.with_output(0))
+
 
     def configureButtonBindings(self) -> None:
         """
