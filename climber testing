@@ -1,0 +1,9 @@
+//climber testing
+
+motor = TalonFX(17)
+
+motor.set(ControlMode.PercentOutput, 0.5)
+
+time.sleep(2)
+
+motor.set(ControlMode.PercentOutput, 0.0)
