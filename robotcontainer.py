@@ -6,17 +6,18 @@
 
 import commands2
 from commands2 import cmd
+from commands2 import InstantCommand
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 
 from generated.tuner_constants import TunerConstants
 from subsystems.launcher import Launcher
-#from subsystems.feeder import Feeder
+from subsystems.feeder import Feeder
 from subsystems.intake.intake import Intake
 from subsystems.intake.intake_arm import Intake_Arm 
 from telemetry import telemetry
 
-from phoenix6 import swerve
+from phoenix6 import swerve, hardware
 from wpilib import DriverStation
 from wpimath.geometry import Rotation2d
 from wpimath.units import rotationsToRadians
@@ -64,7 +65,7 @@ class RobotContainer:
 
         self.drivetrain = TunerConstants.create_drivetrain()
         self.launcher = Launcher(33)
-        #self.feeder = Feeder(32)
+        self.feeder = Feeder(32)
         self.intake = Intake()
         self.intake_arm = Intake_Arm()
 
@@ -103,8 +104,8 @@ class RobotContainer:
         Trigger(DriverStation.isDisabled).whileTrue(
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
-
-        #self._joystick.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
+        #self._joystick.x().onTrue(InstantCommand(lambda: self.drivetrain.get_pigeon2().reset()))
+        self._joystick.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
         self._joystick.b().whileTrue(
             self.drivetrain.apply_request(
                 lambda: self._point.with_module_direction(
@@ -137,13 +138,23 @@ class RobotContainer:
         # Right trigger: variable speed based on trigger position
         self._joystick.rightTrigger(0.1).whileTrue(
             self.launcher.run(
-                lambda: self.launcher.set_speed(1.0)
+                lambda: self.launcher.set_speed(0.5)
             )
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
-        # Right bumper: full speed while held
         self._joystick.rightBumper().whileTrue(
+            self.launcher.run(
+                lambda: self.feeder.set_speed(-0.5)
+            )
+        ).onFalse(self.feeder.runOnce(self.launcher.stop))
+
+        # Right bumper: full speed while held
+        self._joystick.povUp().whileTrue(
             self.intake_arm.run(lambda: self.intake_arm.set_speed(0.8))
+        ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
+
+        self._joystick.povDown().whileTrue(
+            self.intake_arm.run(lambda: self.intake_arm.set_speed(-0.8))
         ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
 
         self.drivetrain.register_telemetry(
@@ -156,14 +167,11 @@ class RobotContainer:
             )
         ).onFalse(self.intake.runOnce(self.intake.stop))
 
-        # Right bumper: full speed while held
-        self._joystick.leftBumper().whileTrue(
-            self.intake_arm.run(lambda: self.intake_arm.set_speed(0.8))
-        ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
+        
 
         #self._joystick.a().whileTrue(
             #self.feeder.run(lambda: self.feeder.set_speed(-0.5))
-        #).onFalse(self.feeder.runOnce(self.feeder.stop)) 
+        #n).onFalse(self.feeder.runOnce(self.feeder.stop)) 
 
         
 
