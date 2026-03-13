@@ -116,26 +116,29 @@ class RobotContainer:
         # Run SysId routines when holding back/start and X/Y.
         # Note that each routine should be run exactly once in a single log.
 
-        # reset the field-centric heading on left bumper press
+
+        # CONTROLS
+
+            # reset the field-centric heading on left bumper press
         self._joystick.x().onTrue(
             self.drivetrain.runOnce(self.drivetrain.seed_field_centric)
         )
 
-        # Launcher controls
-        # Right trigger: variable speed based on trigger position
+        # Right trigger: Run Shooter
         self._joystick.rightTrigger(0.1).whileTrue(
             self.launcher.run(
                 lambda: self.launcher.set_speed(0.5)
             )
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
+        # Right bumper: Hold Intake
         self._joystick.rightBumper().whileTrue(
             self.feeder.run(
                 lambda: self.feeder.set_speed(-0.5)
             )
         ).onFalse(self.feeder.runOnce(self.feeder.stop))
 
-        # Right bumper: full speed while held
+        # Y: Intake arm down
         self._joystick.y().whileTrue(
             self.intake_arm.run(lambda: self.intake_arm.set_speed(-0.8))
         ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
@@ -144,10 +147,17 @@ class RobotContainer:
             lambda state: self._logger.telemeterize(state)
         )
 
+        # Left trigger: Arm Shooter & Feeder
+        self._joystick.leftTrigger(0.1).whileTrue(
+            self.feeder.run(
+                lambda: self.feeder.set_speed(-0.5)
+            ),      
+        ).onFalse(self.feeder.runOnce(self.feeder.stop))
+
         self._joystick.leftTrigger(0.1).whileTrue(
             self.intake.run(
-                lambda: self.intake.set_speed(-0.8)
-            )
+                lambda: self.intake.set_speed(0.1)
+            ),      
         ).onFalse(self.intake.runOnce(self.intake.stop))
 
         
