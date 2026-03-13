@@ -104,7 +104,6 @@ class RobotContainer:
         Trigger(DriverStation.isDisabled).whileTrue(
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
-        #self._joystick.x().onTrue(InstantCommand(lambda: self.drivetrain.get_pigeon2().reset()))
         self._joystick.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
         self._joystick.b().whileTrue(
             self.drivetrain.apply_request(
@@ -130,7 +129,7 @@ class RobotContainer:
         )
 
         # reset the field-centric heading on left bumper press
-        self._joystick.leftBumper().onTrue(
+        self._joystick.x().onTrue(
             self.drivetrain.runOnce(self.drivetrain.seed_field_centric)
         )
 
@@ -143,10 +142,10 @@ class RobotContainer:
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
         self._joystick.rightBumper().whileTrue(
-            self.launcher.run(
+            self.feeder.run(
                 lambda: self.feeder.set_speed(-0.5)
             )
-        ).onFalse(self.feeder.runOnce(self.launcher.stop))
+        ).onFalse(self.feeder.runOnce(self.feeder.stop))
 
         # Right bumper: full speed while held
         self._joystick.povUp().whileTrue(
