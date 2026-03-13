@@ -119,7 +119,7 @@ class RobotContainer:
 
         # CONTROLS
 
-            # reset the field-centric heading on left bumper press
+        # X: Seed Field Centric/Reset Position
         self._joystick.x().onTrue(
             self.drivetrain.runOnce(self.drivetrain.seed_field_centric)
         )
@@ -148,11 +148,18 @@ class RobotContainer:
         )
 
         # Left trigger: Arm Shooter & Feeder
-        self._joystick.leftTrigger(0.1).whileTrue(
-            self.feeder.run(
-                lambda: self.feeder.set_speed(-0.5)
-            ),      
-        ).onFalse(self.feeder.runOnce(self.feeder.stop))
+        self._joystick.leftTrigger(0.1).whileTrue(  
+            cmd.parallel(
+                self.feeder.run(lambda: self.feeder.set_speed(-0.5)),
+                self.launcher.run(lambda: self.launcher.set_speed(0.1)),
+                print("Shooter & Feeder Armed")
+            )   
+        ).onFalse(
+            cmd.parallel(
+                self.feeder.runOnce(self.feeder.stop),
+                self.launcher.runOnce(self.feeder.stop),
+            )
+        )
 
         self._joystick.leftTrigger(0.1).whileTrue(
             self.intake.run(
