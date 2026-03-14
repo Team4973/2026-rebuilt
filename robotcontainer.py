@@ -35,7 +35,7 @@ class RobotContainer:
     def __init__(self) -> None:
         self.x_limiter = SlewRateLimiter(4)
         self.y_limiter = SlewRateLimiter(4)
-        self.rot_limiter = SlewRateLimiter(4)
+        self.rot_limiter = SlewRateLimiter(5)
 
 
         self._max_speed = (
@@ -134,7 +134,7 @@ class RobotContainer:
         # Right bumper: Hold Intake
         self._joystick.rightBumper().whileTrue(
             self.intake.run(
-                lambda: self.intake.set_speed(-0.5)
+                lambda: self.intake.set_speed(-0.6)
             )
         ).onFalse(self.intake.runOnce(self.intake.stop))
 
