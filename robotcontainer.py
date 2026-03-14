@@ -6,17 +6,22 @@
 
 import commands2
 from commands2 import cmd
+from commands2 import InstantCommand
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 
 from generated.tuner_constants import TunerConstants
 from subsystems.launcher import Launcher
+from subsystems.feeder import Feeder
+from subsystems.intake.intake import Intake
+from subsystems.intake.intake_arm import Intake_Arm 
 from telemetry import telemetry
 
-from phoenix6 import swerve
+from phoenix6 import swerve, hardware
 from wpilib import DriverStation
 from wpimath.geometry import Rotation2d
 from wpimath.units import rotationsToRadians
+from wpimath.filter import SlewRateLimiter
 
 
 class RobotContainer:
@@ -28,6 +33,11 @@ class RobotContainer:
     """
 
     def __init__(self) -> None:
+        self.x_limiter = SlewRateLimiter(4)
+        self.y_limiter = SlewRateLimiter(4)
+        self.rot_limiter = SlewRateLimiter(4)
+
+
         self._max_speed = (
             1.0 * TunerConstants.speed_at_12_volts
         )  # speed_at_12_volts desired top speed
@@ -54,7 +64,10 @@ class RobotContainer:
         self._joystick = CommandXboxController(0)
 
         self.drivetrain = TunerConstants.create_drivetrain()
-        self.launcher = Launcher(47)
+        self.launcher = Launcher(33)
+        self.feeder = Feeder(32)
+        self.intake = Intake()
+        self.intake_arm = Intake_Arm()
 
         # Configure the button bindings
         self.configureButtonBindings()
@@ -73,13 +86,13 @@ class RobotContainer:
             self.drivetrain.apply_request(
                 lambda: (
                     self._drive.with_velocity_x(
-                        -self._joystick.getLeftY() * self._max_speed
+                        -self.x_limiter.calculate(self._joystick.getLeftY() * self._max_speed)
                     )  # Drive forward with negative Y (forward)
                     .with_velocity_y(
-                        -self._joystick.getLeftX() * self._max_speed
+                        -self.y_limiter.calculate(self._joystick.getLeftX() * self._max_speed)
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
-                        -self._joystick.getRightX() * self._max_angular_rate
+                        -self.rot_limiter.calculate(self._joystick.getRightX() * self._max_angular_rate)
                     )  # Drive counterclockwise with negative X (left)
                 )
             )
@@ -91,7 +104,6 @@ class RobotContainer:
         Trigger(DriverStation.isDisabled).whileTrue(
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
-
         self._joystick.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
         self._joystick.b().whileTrue(
             self.drivetrain.apply_request(
@@ -103,40 +115,60 @@ class RobotContainer:
 
         # Run SysId routines when holding back/start and X/Y.
         # Note that each routine should be run exactly once in a single log.
-        (self._joystick.back() & self._joystick.y()).whileTrue(
-            self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kForward)
-        )
-        (self._joystick.back() & self._joystick.x()).whileTrue(
-            self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
-        )
-        (self._joystick.start() & self._joystick.y()).whileTrue(
-            self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
-        )
-        (self._joystick.start() & self._joystick.x()).whileTrue(
-            self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
-        )
 
-        # reset the field-centric heading on left bumper press
-        self._joystick.leftBumper().onTrue(
+
+        # CONTROLS
+
+        # X: Seed Field Centric/Reset Position
+        self._joystick.x().onTrue(
             self.drivetrain.runOnce(self.drivetrain.seed_field_centric)
         )
 
-        # Launcher controls
-        # Right trigger: variable speed based on trigger position
+        # Right trigger: Run Shooter at target velocity (tune this value)
         self._joystick.rightTrigger(0.1).whileTrue(
             self.launcher.run(
-                lambda: self.launcher.set_speed(self._joystick.getRightTriggerAxis())
+                lambda: self.launcher.set_velocity(60)  # 50 rps = 3000 RPM
             )
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
-        # Right bumper: full speed while held
+        # Right bumper: Hold Intake
         self._joystick.rightBumper().whileTrue(
-            self.launcher.runOnce(lambda: self.launcher.set_speed(1.0))
-        ).onFalse(self.launcher.runOnce(self.launcher.stop))
+            self.intake.run(
+                lambda: self.intake.set_speed(-0.5)
+            )
+        ).onFalse(self.intake.runOnce(self.intake.stop))
+
+        # Y: Intake arm down
+        self._joystick.y().whileTrue(
+            self.intake_arm.run(lambda: self.intake_arm.set_speed(0.8))
+        ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
 
         self.drivetrain.register_telemetry(
             lambda state: self._logger.telemeterize(state)
         )
+
+        # Left trigger: Arm Shooter & Feeder
+        self._joystick.leftTrigger(0.1).whileTrue(  
+            cmd.parallel(
+                self.feeder.run(lambda: self.feeder.set_speed(-0.5)),
+                self.launcher.run(lambda: self.launcher.set_velocity(6)),  # 5 rps = 300 RPM
+                cmd.print_("Shooter & Feeder Armed")
+            )   
+        ).onFalse(
+            cmd.parallel(
+                self.feeder.runOnce(self.feeder.stop),
+                self.launcher.runOnce(self.launcher.stop),
+            )
+        )
+
+        
+
+        #self._joystick.a().whileTrue(
+            #self.feeder.run(lambda: self.feeder.set_speed(-0.5))
+        #n).onFalse(self.feeder.runOnce(self.feeder.stop)) 
+
+        
+
 
     def getAutonomousCommand(self) -> commands2.Command:
         """
