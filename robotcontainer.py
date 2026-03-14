@@ -127,16 +127,16 @@ class RobotContainer:
         # Right trigger: Run Shooter
         self._joystick.rightTrigger(0.1).whileTrue(
             self.launcher.run(
-                lambda: self.launcher.set_speed(0.5)
+                lambda: self.launcher.set_speed(0.75) # 75 percent power
             )
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
         # Right bumper: Hold Intake
         self._joystick.rightBumper().whileTrue(
-            self.feeder.run(
-                lambda: self.feeder.set_speed(-0.5)
+            self.intake.run(
+                lambda: self.intake.set_speed(-0.5)
             )
-        ).onFalse(self.feeder.runOnce(self.feeder.stop))
+        ).onFalse(self.intake.runOnce(self.intake.stop))
 
         # Y: Intake arm down
         self._joystick.y().whileTrue(
