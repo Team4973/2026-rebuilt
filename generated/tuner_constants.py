@@ -63,7 +63,11 @@ class TunerConstants:
 
     # Initial configs for the drive and steer motors and the azimuth encoder; these cannot be null.
     # Some configs will be overwritten; check the `with_*_initial_configs()` API documentation.
-    _drive_initial_configs = configs.TalonFXConfiguration()
+    _drive_initial_configs = configs.TalonFXConfiguration().with_motor_output(
+      configs.MotorOutputConfigs().with_neutral_mode(
+          signals.NeutralModeValue.BRAKE
+      )
+    )
     _steer_initial_configs = configs.TalonFXConfiguration().with_current_limits(
         configs.CurrentLimitsConfigs()
         # Swerve azimuth does not require much torque output, so we can set a relatively low
