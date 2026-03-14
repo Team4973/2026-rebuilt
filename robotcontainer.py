@@ -140,7 +140,7 @@ class RobotContainer:
 
         # Y: Intake arm down
         self._joystick.y().whileTrue(
-            self.intake_arm.run(lambda: self.intake_arm.set_speed(-0.8))
+            self.intake_arm.run(lambda: self.intake_arm.set_speed(0.8))
         ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
 
         self.drivetrain.register_telemetry(
