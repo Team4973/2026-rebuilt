@@ -33,13 +33,13 @@ class RobotContainer:
     """
 
     def __init__(self) -> None:
-        self.x_limiter = SlewRateLimiter(4)
-        self.y_limiter = SlewRateLimiter(4)
-        self.rot_limiter = SlewRateLimiter(4)
+        self.x_limiter = SlewRateLimiter(8)
+        self.y_limiter = SlewRateLimiter(8)
+        self.rot_limiter = SlewRateLimiter(8)
 
 
         self._max_speed = (
-            1.0 * TunerConstants.speed_at_12_volts
+            0.9 * TunerConstants.speed_at_12_volts
         )  # speed_at_12_volts desired top speed
         self._max_angular_rate = rotationsToRadians(
             0.75
