@@ -7,7 +7,7 @@ class Launcher(Subsystem):
 
     # Tune these PID gains on the real robot
     LAUNCHER_KP = 0.1
-    LAUNCHER_KV = 0.12
+    LAUNCHER_KV = 0.15
 
     def __init__(self, launcher_motor_id: int = 33):
         super().__init__()
