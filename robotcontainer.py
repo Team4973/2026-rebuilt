@@ -151,7 +151,7 @@ class RobotContainer:
         self._joystick.leftTrigger(0.1).whileTrue(  
             cmd.parallel(
                 self.feeder.run(lambda: self.feeder.set_speed(-0.5)),
-                self.launcher.run(lambda: self.launcher.set_velocity(6)),  # 5 rps = 300 RPM
+                self.launcher.run(lambda: self.launcher.set_velocity(60)),  # has to match the right trigger value
                 cmd.print_("Shooter & Feeder Armed")
             )   
         ).onFalse(
