@@ -127,7 +127,8 @@ class RobotContainer:
         # Right trigger: Run Shooter at target velocity (tune this value)
         self._joystick.rightTrigger(0.1).whileTrue(
             self.launcher.run(
-                lambda: self.launcher.set_velocity(64)  # 50 rps = 3000 RPM
+                # 4200 revolutions-per-minute
+                lambda: self.launcher.set_velocity(70)  # 50 rps = 3000 RPM
             )
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
@@ -187,7 +188,7 @@ class RobotContainer:
             # Then slowly drive forward (away from us) for 5 seconds.
             self.drivetrain.apply_request(
                 lambda: (
-                    self._drive.with_velocity_x(0.5)
+                    self._drive.with_velocity_x(0.0)
                     .with_velocity_y(0)
                     .with_rotational_rate(0)
                 )
