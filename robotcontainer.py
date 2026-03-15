@@ -127,7 +127,7 @@ class RobotContainer:
         # Right trigger: Run Shooter at target velocity (tune this value)
         self._joystick.rightTrigger(0.1).whileTrue(
             self.launcher.run(
-                lambda: self.launcher.set_velocity(60)  # 50 rps = 3000 RPM
+                lambda: self.launcher.set_velocity(64)  # 50 rps = 3000 RPM
             )
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
