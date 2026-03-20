@@ -6,18 +6,16 @@
 
 import commands2
 from commands2 import cmd
-from commands2 import InstantCommand
 from commands2.button import CommandXboxController, Trigger
-from commands2.sysid import SysIdRoutine
 
 from generated.tuner_constants import TunerConstants
 from subsystems.launcher import Launcher
 from subsystems.feeder import Feeder
 from subsystems.intake.intake import Intake
-from subsystems.intake.intake_arm import Intake_Arm 
+from subsystems.intake.intake_arm import Intake_Arm
 from telemetry import telemetry
 
-from phoenix6 import swerve, hardware
+from phoenix6 import swerve
 from wpilib import DriverStation
 from wpimath.geometry import Rotation2d
 from wpimath.units import rotationsToRadians
@@ -36,7 +34,6 @@ class RobotContainer:
         self.x_limiter = SlewRateLimiter(4)
         self.y_limiter = SlewRateLimiter(4)
         self.rot_limiter = SlewRateLimiter(4)
-
 
         self._max_speed = (
             1.0 * TunerConstants.speed_at_12_volts
@@ -86,13 +83,19 @@ class RobotContainer:
             self.drivetrain.apply_request(
                 lambda: (
                     self._drive.with_velocity_x(
-                        -self.x_limiter.calculate(self._joystick.getLeftY() * self._max_speed)
+                        -self.x_limiter.calculate(
+                            self._joystick.getLeftY() * self._max_speed
+                        )
                     )  # Drive forward with negative Y (forward)
                     .with_velocity_y(
-                        -self.y_limiter.calculate(self._joystick.getLeftX() * self._max_speed)
+                        -self.y_limiter.calculate(
+                            self._joystick.getLeftX() * self._max_speed
+                        )
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
-                        -self.rot_limiter.calculate(self._joystick.getRightX() * self._max_angular_rate)
+                        -self.rot_limiter.calculate(
+                            self._joystick.getRightX() * self._max_angular_rate
+                        )
                     )  # Drive counterclockwise with negative X (left)
                 )
             )
@@ -113,10 +116,6 @@ class RobotContainer:
             )
         )
 
-        # Run SysId routines when holding back/start and X/Y.
-        # Note that each routine should be run exactly once in a single log.
-
-
         # CONTROLS
 
         # X: Seed Field Centric/Reset Position
@@ -124,18 +123,16 @@ class RobotContainer:
             self.drivetrain.runOnce(self.drivetrain.seed_field_centric)
         )
 
-        # Right trigger: Run Shooter at target velocity (tune this value)
+        # Right trigger: Run launcher at adjustable target velocity
         self._joystick.rightTrigger(0.1).whileTrue(
             self.launcher.run(
-                lambda: self.launcher.set_velocity(60)  # 50 rps = 3000 RPM
+                lambda: self.launcher.set_velocity(self.launcher.get_target_rps())
             )
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
         # Right bumper: Hold Intake
         self._joystick.rightBumper().whileTrue(
-            self.intake.run(
-                lambda: self.intake.set_speed(-0.5)
-            )
+            self.intake.run(lambda: self.intake.set_speed(-0.5))
         ).onFalse(self.intake.runOnce(self.intake.stop))
 
         # Y: Intake arm down
@@ -147,13 +144,14 @@ class RobotContainer:
             lambda state: self._logger.telemeterize(state)
         )
 
-        # Left trigger: Arm Shooter & Feeder
-        self._joystick.leftTrigger(0.1).whileTrue(  
+        # Left trigger: Arm Launcher & Feeder
+        self._joystick.leftTrigger(0.1).whileTrue(
             cmd.parallel(
                 self.feeder.run(lambda: self.feeder.set_speed(-0.5)),
-                self.launcher.run(lambda: self.launcher.set_velocity(60)),  # has to match the right trigger value
-                cmd.print_("Shooter & Feeder Armed")
-            )   
+                self.launcher.run(
+                    lambda: self.launcher.set_velocity(self.launcher.get_target_rps())
+                ),
+            )
         ).onFalse(
             cmd.parallel(
                 self.feeder.runOnce(self.feeder.stop),
@@ -161,14 +159,13 @@ class RobotContainer:
             )
         )
 
-        
-
-        #self._joystick.a().whileTrue(
-            #self.feeder.run(lambda: self.feeder.set_speed(-0.5))
-        #n).onFalse(self.feeder.runOnce(self.feeder.stop)) 
-
-        
-
+        # D-pad left/right: Nudge launcher speed down/up
+        self._joystick.povLeft().onTrue(
+            self.launcher.runOnce(self.launcher.nudge_speed_down)
+        )
+        self._joystick.povRight().onTrue(
+            self.launcher.runOnce(self.launcher.nudge_speed_up)
+        )
 
     def getAutonomousCommand(self) -> commands2.Command:
         """
@@ -191,8 +188,7 @@ class RobotContainer:
                     .with_velocity_y(0)
                     .with_rotational_rate(0)
                 )
-            )
-            .withTimeout(5.0),
+            ).withTimeout(5.0),
             # Finally idle for the rest of auton
-            self.drivetrain.apply_request(lambda: idle)
+            self.drivetrain.apply_request(lambda: idle),
         )
