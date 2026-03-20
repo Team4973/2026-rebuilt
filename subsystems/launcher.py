@@ -32,6 +32,9 @@ class Launcher(Subsystem):
 
         # Adjustable target speed
         self._target_rps = self.DEFAULT_RPS
+        self._auto_mode = False
+        self._auto_rps = self.DEFAULT_RPS
+        self._distance_to_hopper = 0.0
 
     def set_velocity(self, rps: float) -> None:
         """Set motor velocity in rotations per second."""
@@ -46,8 +49,25 @@ class Launcher(Subsystem):
         self._launcher_motor.set_control(self._duty_cycle.with_output(0))
 
     def get_target_rps(self) -> float:
-        """Return the current target RPS."""
+        """Return the active target RPS (auto or manual depending on mode)."""
+        if self._auto_mode:
+            return self._auto_rps
         return self._target_rps
+
+    def toggle_auto_mode(self) -> None:
+        """Toggle between manual and auto (distance-based) speed mode."""
+        self._auto_mode = not self._auto_mode
+
+    def is_auto_mode(self) -> bool:
+        return self._auto_mode
+
+    def set_auto_rps(self, rps: float) -> None:
+        """Set the auto-calculated RPS (called externally from distance logic)."""
+        self._auto_rps = rps
+
+    def set_distance_to_hopper(self, distance_m: float) -> None:
+        """Store distance for telemetry display."""
+        self._distance_to_hopper = distance_m
 
     def nudge_speed_up(self) -> None:
         """Increase target RPS by increment, clamped to MAX_RPS."""
@@ -62,8 +82,14 @@ class Launcher(Subsystem):
         self._target_rps = self.DEFAULT_RPS
 
     def periodic(self) -> None:
-        SmartDashboard.putNumber("Launcher/TargetRPS", self._target_rps)
+        SmartDashboard.putNumber("Launcher/TargetRPS", self.get_target_rps())
+        SmartDashboard.putNumber("Launcher/ManualRPS", self._target_rps)
+        SmartDashboard.putNumber("Launcher/AutoRPS", self._auto_rps)
         SmartDashboard.putNumber(
             "Launcher/ActualRPS",
             self._launcher_motor.get_velocity().value,
         )
+        SmartDashboard.putString(
+            "Launcher/Mode", "Auto" if self._auto_mode else "Manual"
+        )
+        SmartDashboard.putNumber("Launcher/DistanceToHopper", self._distance_to_hopper)

@@ -10,9 +10,11 @@ from commands2.button import CommandXboxController, Trigger
 
 from generated.tuner_constants import TunerConstants
 from subsystems.launcher import Launcher
+from subsystems.launcher_config import get_hopper_position, interpolate_rps
 from subsystems.feeder import Feeder
 from subsystems.intake.intake import Intake
 from subsystems.intake.intake_arm import Intake_Arm
+from subsystems.vision import Vision
 from telemetry import telemetry
 
 from phoenix6 import swerve
@@ -65,6 +67,7 @@ class RobotContainer:
         self.feeder = Feeder(32)
         self.intake = Intake()
         self.intake_arm = Intake_Arm()
+        self.vision = Vision(self.drivetrain)
 
         # Configure the button bindings
         self.configureButtonBindings()
@@ -140,9 +143,7 @@ class RobotContainer:
             self.intake_arm.run(lambda: self.intake_arm.set_speed(0.8))
         ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
 
-        self.drivetrain.register_telemetry(
-            lambda state: self._logger.telemeterize(state)
-        )
+        self.drivetrain.register_telemetry(self._update_telemetry)
 
         # Left trigger: Arm Launcher & Feeder
         self._joystick.leftTrigger(0.1).whileTrue(
@@ -166,6 +167,22 @@ class RobotContainer:
         self._joystick.povRight().onTrue(
             self.launcher.runOnce(self.launcher.nudge_speed_up)
         )
+
+        # Back button: Toggle auto/manual launcher speed mode
+        self._joystick.back().onTrue(
+            self.launcher.runOnce(self.launcher.toggle_auto_mode)
+        )
+
+    def _update_telemetry(self, state) -> None:
+        """Called every drivetrain cycle. Updates telemetry and auto launcher speed."""
+        self._logger.telemeterize(state)
+
+        # Calculate distance to hopper and update auto launcher RPS
+        hopper = get_hopper_position()
+        distance = state.pose.translation().distance(hopper)
+        auto_rps = interpolate_rps(distance)
+        self.launcher.set_auto_rps(auto_rps)
+        self.launcher.set_distance_to_hopper(distance)
 
     def getAutonomousCommand(self) -> commands2.Command:
         """

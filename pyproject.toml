@@ -10,6 +10,8 @@ requires-python = ">=3.12"
 dependencies = [
     "robotpy[commands2,sim]~=2026.1",
     "phoenix6~=26.1",
+    "photonlibpy",
+    "robotpy-apriltag",
 ]
 
 [tool.robotpy]
@@ -20,22 +22,12 @@ robotpy_version = "2026.2.1"
 # Which core WPILib components should be installed
 # -> equivalent to `pip install robotpy[extra1, ...]
 components = [
-    # "all",
-    # "apriltag",
+    "apriltag",
     "commands2",
-    # "cscore",
-    # "romi",
-    # "sim",
-    # "xrp",
 ]
 
 # Other pip packages to install (including vendor packages)
 requires = [
     "phoenix6~=26.1",
-    # "photonlibpy",
-    # "robotpy-ctre",  # Phoenix 5
-    # "robotpy-navx",
-    # "robotpy-pathplannerlib",
-    # "robotpy-playingwithfusion",
-    # "robotpy-rev",
+    "photonlibpy",
 ]
