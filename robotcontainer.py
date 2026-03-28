@@ -4,6 +4,8 @@
 # the WPILib BSD license file in the root directory of this project.
 #
 
+import math
+
 import commands2
 from commands2 import cmd
 from commands2.button import CommandXboxController, Trigger
@@ -18,7 +20,7 @@ from subsystems.vision import Vision
 from telemetry import telemetry
 
 from phoenix6 import swerve
-from wpilib import DriverStation
+from wpilib import DriverStation, SmartDashboard
 from wpimath.geometry import Rotation2d
 from wpimath.units import rotationsToRadians
 from wpimath.filter import SlewRateLimiter
@@ -55,6 +57,26 @@ class RobotContainer:
                 swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
             )  # Use open-loop control for drive motors
         )
+        self._face_hopper = (
+            swerve.requests.FieldCentricFacingAngle()
+            .with_deadband(self._max_speed * 0.1)
+            .with_drive_request_type(
+                swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
+            )
+        )
+        self._face_hopper_kp = 7.0
+        self._face_hopper_ki = 0.0
+        self._face_hopper_kd = 0.0
+        self._face_hopper.heading_controller.setPID(
+            self._face_hopper_kp, self._face_hopper_ki, self._face_hopper_kd
+        )
+        self._face_hopper.heading_controller.enableContinuousInput(
+            -math.pi, math.pi
+        )
+        SmartDashboard.putNumber("FaceHopper/kP", self._face_hopper_kp)
+        SmartDashboard.putNumber("FaceHopper/kI", self._face_hopper_ki)
+        SmartDashboard.putNumber("FaceHopper/kD", self._face_hopper_kd)
+
         self._brake = swerve.requests.SwerveDriveBrake()
         self._point = swerve.requests.PointWheelsAt()
 
@@ -168,10 +190,38 @@ class RobotContainer:
             self.launcher.runOnce(self.launcher.nudge_speed_up)
         )
 
+        # Right stick press: Face hopper while held (translation still from left stick)
+        self._joystick.rightStick().whileTrue(
+            self.drivetrain.apply_request(
+                lambda: (
+                    self._face_hopper
+                    .with_velocity_x(
+                        self.x_limiter.calculate(
+                            self._joystick.getLeftY() * self._max_speed
+                        )
+                    )
+                    .with_velocity_y(
+                        self.y_limiter.calculate(
+                            self._joystick.getLeftX() * self._max_speed
+                        )
+                    )
+                    .with_target_direction(self._heading_to_hopper())
+                )
+            )
+        )
+
         # Back button: Toggle auto/manual launcher speed mode
         self._joystick.back().onTrue(
             self.launcher.runOnce(self.launcher.toggle_auto_mode)
         )
+
+    def _heading_to_hopper(self) -> Rotation2d:
+        """Calculate the heading from the robot to the alliance hopper."""
+        hopper = get_hopper_position()
+        pose = self.drivetrain.get_state().pose
+        dx = hopper.x - pose.x
+        dy = hopper.y - pose.y
+        return Rotation2d(dx, dy)
 
     def _update_telemetry(self, state) -> None:
         """Called every drivetrain cycle. Updates telemetry and auto launcher speed."""
@@ -183,6 +233,26 @@ class RobotContainer:
         auto_rps = interpolate_rps(distance)
         self.launcher.set_auto_rps(auto_rps)
         self.launcher.set_distance_to_hopper(distance)
+
+        # Face-hopper heading telemetry (always published)
+        target = self._heading_to_hopper()
+        SmartDashboard.putNumber("FaceHopper/TargetDeg", target.degrees())
+        SmartDashboard.putNumber("FaceHopper/CurrentDeg", state.pose.rotation().degrees())
+        SmartDashboard.putNumber(
+            "FaceHopper/ErrorDeg", target.degrees() - state.pose.rotation().degrees()
+        )
+
+        # Live-tunable face-hopper heading PID (only apply on change)
+        new_kp = SmartDashboard.getNumber("FaceHopper/kP", self._face_hopper_kp)
+        new_ki = SmartDashboard.getNumber("FaceHopper/kI", self._face_hopper_ki)
+        new_kd = SmartDashboard.getNumber("FaceHopper/kD", self._face_hopper_kd)
+        if (new_kp != self._face_hopper_kp
+                or new_ki != self._face_hopper_ki
+                or new_kd != self._face_hopper_kd):
+            self._face_hopper_kp = new_kp
+            self._face_hopper_ki = new_ki
+            self._face_hopper_kd = new_kd
+            self._face_hopper.heading_controller.setPID(new_kp, new_ki, new_kd)
 
     def getAutonomousCommand(self) -> commands2.Command:
         """
