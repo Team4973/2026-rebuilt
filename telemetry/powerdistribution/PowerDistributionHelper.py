@@ -1,42 +1,81 @@
+from dataclasses import dataclass
+
 from wpilib import PowerDistribution
 
-pdm = PowerDistribution(1, PowerDistribution.ModuleType.kRev)
+
+@dataclass(slots=True)
+class PowerDistributionSnapshot:
+    voltage: float
+    total_current: float
+    temperature: float
+    switchable_channel: bool
+    channel_currents: list[float]
+    breaker_faults: list[bool]
+    sticky_breaker_faults: list[bool]
+    active_faults: list[str]
+    active_sticky_faults: list[str]
+    version: str
 
 
-# gets voltage of pdm, increments of 0.05V
-voltage = pdm.getVoltage()
+class PowerDistributionHelper:
+    def __init__(
+        self,
+        module_id: int = 1,
+        module_type: PowerDistribution.ModuleType = PowerDistribution.ModuleType.kRev,
+    ) -> None:
+        self._power_distribution = PowerDistribution(module_id, module_type)
 
-# gets the total current 
-totalCurrent = pdm.getTotalCurrent()
+    def read(self) -> PowerDistributionSnapshot:
+        faults = self._power_distribution.getFaults()
+        sticky_faults = self._power_distribution.getStickyFaults()
+        num_channels = self._power_distribution.getNumChannels()
 
-# gets the total energy
-pdmVersion = pdm.getVersion()
+        return PowerDistributionSnapshot(
+            voltage=self._power_distribution.getVoltage(),
+            total_current=self._power_distribution.getTotalCurrent(),
+            temperature=self._power_distribution.getTemperature(),
+            switchable_channel=self._power_distribution.getSwitchableChannel(),
+            channel_currents=self._power_distribution.getAllCurrents(),
+            breaker_faults=[
+                faults.getBreakerFault(channel) for channel in range(num_channels)
+            ],
+            sticky_breaker_faults=[
+                sticky_faults.getBreakerFault(channel)
+                for channel in range(num_channels)
+            ],
+            active_faults=self._get_active_fault_names(
+                faults,
+                ("Brownout", "CanWarning", "HardwareFault"),
+            ),
+            active_sticky_faults=self._get_active_fault_names(
+                sticky_faults,
+                (
+                    "Brownout",
+                    "CanBusOff",
+                    "CanWarning",
+                    "FirmwareFault",
+                    "HardwareFault",
+                    "HasReset",
+                ),
+            ),
+            version=self._format_version(),
+        )
 
-# read faults
-pdmFaults = pdm.getFaults()
+    def _format_version(self) -> str:
+        version = self._power_distribution.getVersion()
+        return (
+            f"fw={version.FirmwareMajor}.{version.FirmwareMinor}.{version.FirmwareFix}, "
+            f"hw={version.HardwareMajor}.{version.HardwareMinor}, "
+            f"uid={version.UniqueId}"
+        )
 
-# gets the current reported on each channel of the pdmH (1-24)
-channel1current = pdm.getCurrent(1)
-channel2current = pdm.getCurrent(2)
-channel3current = pdm.getCurrent(3)
-channel4current = pdm.getCurrent(4)
-channel5current = pdm.getCurrent(5)
-channel6current = pdm.getCurrent(6)
-channel7current = pdm.getCurrent(7)
-channel8current = pdm.getCurrent(8)
-channel9current = pdm.getCurrent(9)
-channel10current = pdm.getCurrent(10)
-channel11current = pdm.getCurrent(11)
-channel12current = pdm.getCurrent(12)
-channel13current = pdm.getCurrent(13)
-channel14current = pdm.getCurrent(14)
-channel15current = pdm.getCurrent(15)
-channel16current = pdm.getCurrent(16)
-channel17current = pdm.getCurrent(17)
-channel18current = pdm.getCurrent(18)
-channel19current = pdm.getCurrent(19)
-channel20current = pdm.getCurrent(20)
-channel21current = pdm.getCurrent(21)
-channel22current = pdm.getCurrent(22)
-channel23current = pdm.getCurrent(23)
-channel24current = pdm.getCurrent(24)
+    @staticmethod
+    def _get_active_fault_names(
+        fault_data: object,
+        attribute_names: tuple[str, ...],
+    ) -> list[str]:
+        return [
+            attribute_name
+            for attribute_name in attribute_names
+            if bool(getattr(fault_data, attribute_name, 0))
+        ]

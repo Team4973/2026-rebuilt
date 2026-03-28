@@ -2,12 +2,12 @@ from wpilib import DriverStation
 from wpimath.geometry import Translation2d
 
 
-# Hopper center positions — midpoint of the two AprilTags on each hopper
-# Red: tags 9 (12.52, 3.68) + 10 (12.52, 4.03) → center (12.52, 3.86)
-# Blue: tags 19 (5.23, 3.68) + 20 (5.23, 4.03) → center (5.23, 3.86)
+# Hopper geometric centers — midpoint of all 8 AprilTags on each hopper
+# Red: X = (11.312 + 12.519) / 2 = 11.916, Y = (3.431 + 4.638) / 2 = 4.035
+# Blue: X = (4.022 + 5.229) / 2 = 4.626, Y = (3.431 + 4.638) / 2 = 4.035
 HOPPER_POSITIONS = {
-    DriverStation.Alliance.kRed: Translation2d(12.52, 3.86),
-    DriverStation.Alliance.kBlue: Translation2d(5.23, 3.86),
+    DriverStation.Alliance.kRed: Translation2d(11.916, 4.035),
+    DriverStation.Alliance.kBlue: Translation2d(4.626, 4.035),
 }
 
 # Calibrated distance (meters) → launcher RPS lookup.
