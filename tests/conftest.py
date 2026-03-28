@@ -12,7 +12,7 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def increase_robot_init_timeout():
-    """Patch TestController.run_robot to allow 10 seconds for robotInit."""
+    """Patch TestController.run_robot to allow 5 seconds for robotInit."""
     from pyfrc.test_support.controller import TestController
     import contextlib
     import threading
@@ -30,8 +30,8 @@ def increase_robot_init_timeout():
         th.start()
 
         with self._cond:
-            assert self._cond.wait_for(lambda: self._robot_started, timeout=5)
-            assert self._cond.wait_for(lambda: self._robot_initialized, timeout=10)
+            assert self._cond.wait_for(lambda: self._robot_started, timeout=3)
+            assert self._cond.wait_for(lambda: self._robot_initialized, timeout=5)
 
         try:
             yield
@@ -59,9 +59,9 @@ def increase_robot_init_timeout():
 
         stepTimingAsync(1.0)
 
-        th.join(timeout=5)
+        th.join(timeout=3)
         if th.is_alive():
-            pytest.fail("robot did not exit within 5 seconds")
+            pytest.fail("robot did not exit within 3 seconds")
 
         self._robot = None
         self._thread = None
