@@ -83,13 +83,15 @@ class Vision(Subsystem):
                 SmartDashboard.putNumber("Vision/BestTargetID", best.fiducialId)
                 SmartDashboard.putNumber("Vision/BestTargetAmbiguity", best.poseAmbiguity)
 
-            # Try multi-tag first, fall back to single-tag
+            # Try multi-tag first, then single-tag, then PnP/trig solve
             multi_pose = self._estimator.estimateCoprocMultiTagPose(result)
             single_pose = self._estimator.estimateLowestAmbiguityPose(result)
+            pnp_pose = self._estimator.estimatePnpDistanceTrigSolvePose(result)
             SmartDashboard.putBoolean("Vision/MultiTagOK", multi_pose is not None)
             SmartDashboard.putBoolean("Vision/SingleTagOK", single_pose is not None)
+            SmartDashboard.putBoolean("Vision/PnpTrigOK", pnp_pose is not None)
 
-            pose = multi_pose if multi_pose is not None else single_pose
+            pose = multi_pose or single_pose or pnp_pose
             if pose is not None:
                 self._vision_update_count += 1
                 self._drivetrain.add_vision_measurement(
