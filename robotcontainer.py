@@ -193,19 +193,34 @@ class RobotContainer:
         # Simple drive forward auton
         idle = swerve.requests.Idle()
         return cmd.sequence(
-            # Reset our field centric heading to match the robot
-            # facing away from our alliance station wall (0 deg).
-            self.drivetrain.runOnce(
-                lambda: self.drivetrain.seed_field_centric(Rotation2d.fromDegrees(0))
-            ),
-            # Then slowly drive forward (away from us) for 5 seconds.
-            self.drivetrain.apply_request(
-                lambda: (
-                    self._drive.with_velocity_x(0.5)
-                    .with_velocity_y(0)
-                    .with_rotational_rate(0)
-                )
-            ).withTimeout(5.0),
-            # Finally idle for the rest of auton
-            self.drivetrain.apply_request(lambda: idle),
+            # # Reset our field centric heading to match the robot
+            # # facing away from our alliance station wall (0 deg).
+            # self.drivetrain.runOnce(
+            #     lambda: self.drivetrain.seed_field_centric(Rotation2d.fromDegrees(0))
+            # ),
+            # # Then slowly drive forward (away from us) for 5 seconds.
+            # self.drivetrain.apply_request(
+            #     lambda: (
+            #         self._drive.with_velocity_x(0.5)
+            #         .with_velocity_y(0)
+            #         .with_rotational_rate(0)
+            #     )
+            # ).withTimeout(5.0),
+            # # Finally idle for the rest of auton
+            # self.drivetrain.apply_request(lambda: idle),
+
+            self.launcher.runOnce(lambda: self.launcher.toggle_auto_mode()),
+
+            self.launcher.runOnce(
+                    lambda: self.launcher.set_velocity(self.launcher.get_target_rps())
+                ),
+            
+            cmd.waitUntil(lambda: abs(self.launcher.get_velocity()-self.launcher.get_target_rps()) < 2.0),
+
+            self.feeder.runOnce(lambda: self.feeder.set_speed(-0.5)),
+
+            cmd.waitSeconds(5),
+
+            self.launcher.runOnce(lambda: self.launcher.set_velocity(0)),
+            self.feeder.runOnce(lambda: self.feeder.set_speed(0)),
         )

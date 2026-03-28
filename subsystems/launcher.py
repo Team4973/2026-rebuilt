@@ -40,6 +40,9 @@ class Launcher(Subsystem):
         """Set motor velocity in rotations per second."""
         self._launcher_motor.set_control(self._velocity.with_velocity(rps))
 
+    def get_velocity(self):
+        return self._launcher_motor.get_velocity().value
+
     def set_speed(self, speed: float) -> None:
         """Set motor speed (-1.0 to 1.0) open-loop. Kept as fallback."""
         self._launcher_motor.set_control(self._duty_cycle.with_output(speed))
