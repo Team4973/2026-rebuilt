@@ -70,11 +70,26 @@ class Vision(Subsystem):
         if self._camera is None:
             return
 
-        for result in self._camera.getAllUnreadResults():
+        results = self._camera.getAllUnreadResults()
+        SmartDashboard.putNumber("Vision/ResultCount", len(results))
+
+        for result in results:
+            has_targets = result.hasTargets()
+            targets = result.getTargets() if has_targets else []
+            SmartDashboard.putBoolean("Vision/HasTargets", has_targets)
+            SmartDashboard.putNumber("Vision/NumTargets", len(targets))
+            if targets:
+                best = targets[0]
+                SmartDashboard.putNumber("Vision/BestTargetID", best.fiducialId)
+                SmartDashboard.putNumber("Vision/BestTargetAmbiguity", best.poseAmbiguity)
+
             # Try multi-tag first, fall back to single-tag
-            pose = self._estimator.estimateCoprocMultiTagPose(result)
-            if pose is None:
-                pose = self._estimator.estimateLowestAmbiguityPose(result)
+            multi_pose = self._estimator.estimateCoprocMultiTagPose(result)
+            single_pose = self._estimator.estimateLowestAmbiguityPose(result)
+            SmartDashboard.putBoolean("Vision/MultiTagOK", multi_pose is not None)
+            SmartDashboard.putBoolean("Vision/SingleTagOK", single_pose is not None)
+
+            pose = multi_pose if multi_pose is not None else single_pose
             if pose is not None:
                 self._vision_update_count += 1
                 self._drivetrain.add_vision_measurement(
