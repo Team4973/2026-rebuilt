@@ -242,6 +242,13 @@ class RobotContainer:
             "FaceHopper/ErrorDeg", target.degrees() - state.pose.rotation().degrees()
         )
 
+        # Per-module odometry debug: angle (deg) and speed (m/s) for each module
+        module_names = ["FL", "FR", "BL", "BR"]
+        for i, name in enumerate(module_names):
+            mod = state.module_states[i]
+            SmartDashboard.putNumber(f"Swerve/{name}/AngleDeg", mod.angle.degrees())
+            SmartDashboard.putNumber(f"Swerve/{name}/SpeedMps", mod.speed)
+
         # Live-tunable face-hopper heading PID (only apply on change)
         new_kp = SmartDashboard.getNumber("FaceHopper/kP", self._face_hopper_kp)
         new_ki = SmartDashboard.getNumber("FaceHopper/kI", self._face_hopper_ki)
