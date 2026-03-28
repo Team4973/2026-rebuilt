@@ -12,13 +12,12 @@ HOPPER_POSITIONS = {
 
 # Calibrated distance (meters) → launcher RPS lookup.
 # Sorted by distance. Interpolates linearly between points.
-# Known good: 60 RPS at ~1.57m (62 inches from hopper edge).
-# Other values are placeholders — calibrate on the field.
+# Previous values were too hot — reduced 2026-03-28. Calibrate on the field.
 DISTANCE_RPS_POINTS: list[tuple[float, float]] = [
-    (1.0, 45.0),  # close range
-    (1.57, 60.0),  # known good
-    (2.5, 72.0),  # far — calibrate
-    (3.5, 80.0),  # max range — calibrate
+    (1.0, 30.0),  # close range — calibrate
+    (1.57, 40.0),  # mid range — calibrate
+    (2.5, 50.0),  # far — calibrate
+    (3.5, 60.0),  # max range — calibrate
 ]
 
 
