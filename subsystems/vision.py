@@ -13,7 +13,7 @@ class Vision(Subsystem):
     # Camera mount position relative to robot center
     # Adjust these to match your actual camera placement
     ROBOT_TO_CAMERA = Transform3d(
-        Translation3d(-0.1, 25.4, 0.46),  # 4cm back, 25cm left, 46cm up from center
+        Translation3d(-0.1, 0.254, 0.46),  # 10cm back, 25.4cm left, 46cm up from center
         Rotation3d(0, 0, 0),  # no tilt, forward looking
     )
 
@@ -43,6 +43,8 @@ class Vision(Subsystem):
                 self._field_layout,
                 self.ROBOT_TO_CAMERA,
             )
+
+        self._vision_update_count = 0
 
         # Simulation support — full vision sim when not in test mode
         if utils.is_simulation() and self._camera is not None:
@@ -74,6 +76,7 @@ class Vision(Subsystem):
             if pose is None:
                 pose = self._estimator.estimateLowestAmbiguityPose(result)
             if pose is not None:
+                self._vision_update_count += 1
                 self._drivetrain.add_vision_measurement(
                     pose.estimatedPose.toPose2d(),
                     pose.timestampSeconds,
@@ -85,6 +88,14 @@ class Vision(Subsystem):
                 )
 
         SmartDashboard.putBoolean("Vision/Connected", self._camera.isConnected())
+        SmartDashboard.putNumber("Vision/UpdateCount", self._vision_update_count)
+
+        # Publish the drivetrain's believed pose for debugging
+        pose = self._drivetrain.get_state().pose
+        SmartDashboard.putString(
+            "Vision/RobotPose",
+            f"({pose.x:.2f}, {pose.y:.2f}, {pose.rotation().degrees():.1f}°)",
+        )
 
     def simulationPeriodic(self) -> None:
         if hasattr(self, "_vision_sim"):
