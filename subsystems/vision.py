@@ -13,8 +13,8 @@ class Vision(Subsystem):
     # Camera mount position relative to robot center
     # Adjust these to match your actual camera placement
     ROBOT_TO_CAMERA = Transform3d(
-        Translation3d(0.3, 0.0, 0.5),  # 30cm forward, 50cm up from center
-        Rotation3d(0, -0.3, 0),  # tilted ~17 deg down
+        Translation3d(-0.1, 0.254, 0.46),  # 10cm back, 25.4cm left, 46cm up from center
+        Rotation3d(0, 0, 0),  # no tilt, forward looking
     )
 
     CAMERA_NAME = "front_camera"
@@ -44,6 +44,8 @@ class Vision(Subsystem):
                 self.ROBOT_TO_CAMERA,
             )
 
+        self._vision_update_count = 0
+
         # Simulation support — full vision sim when not in test mode
         if utils.is_simulation() and self._camera is not None:
             self._init_sim()
@@ -68,12 +70,30 @@ class Vision(Subsystem):
         if self._camera is None:
             return
 
-        for result in self._camera.getAllUnreadResults():
-            # Try multi-tag first, fall back to single-tag
-            pose = self._estimator.estimateCoprocMultiTagPose(result)
-            if pose is None:
-                pose = self._estimator.estimateLowestAmbiguityPose(result)
+        results = self._camera.getAllUnreadResults()
+        SmartDashboard.putNumber("Vision/ResultCount", len(results))
+
+        for result in results:
+            has_targets = result.hasTargets()
+            targets = result.getTargets() if has_targets else []
+            SmartDashboard.putBoolean("Vision/HasTargets", has_targets)
+            SmartDashboard.putNumber("Vision/NumTargets", len(targets))
+            if targets:
+                best = targets[0]
+                SmartDashboard.putNumber("Vision/BestTargetID", best.fiducialId)
+                SmartDashboard.putNumber("Vision/BestTargetAmbiguity", best.poseAmbiguity)
+
+            # Try multi-tag first, then single-tag, then PnP/trig solve
+            multi_pose = self._estimator.estimateCoprocMultiTagPose(result)
+            single_pose = self._estimator.estimateLowestAmbiguityPose(result)
+            pnp_pose = self._estimator.estimatePnpDistanceTrigSolvePose(result)
+            SmartDashboard.putBoolean("Vision/MultiTagOK", multi_pose is not None)
+            SmartDashboard.putBoolean("Vision/SingleTagOK", single_pose is not None)
+            SmartDashboard.putBoolean("Vision/PnpTrigOK", pnp_pose is not None)
+
+            pose = multi_pose or single_pose or pnp_pose
             if pose is not None:
+                self._vision_update_count += 1
                 self._drivetrain.add_vision_measurement(
                     pose.estimatedPose.toPose2d(),
                     pose.timestampSeconds,
@@ -85,6 +105,14 @@ class Vision(Subsystem):
                 )
 
         SmartDashboard.putBoolean("Vision/Connected", self._camera.isConnected())
+        SmartDashboard.putNumber("Vision/UpdateCount", self._vision_update_count)
+
+        # Publish the drivetrain's believed pose for debugging
+        pose = self._drivetrain.get_state().pose
+        SmartDashboard.putString(
+            "Vision/RobotPose",
+            f"({pose.x:.2f}, {pose.y:.2f}, {pose.rotation().degrees():.1f}°)",
+        )
 
     def simulationPeriodic(self) -> None:
         if hasattr(self, "_vision_sim"):

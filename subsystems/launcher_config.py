@@ -2,23 +2,22 @@ from wpilib import DriverStation
 from wpimath.geometry import Translation2d
 
 
-# Hopper center positions — midpoint of the two AprilTags on each hopper
-# Red: tags 9 (12.52, 3.68) + 10 (12.52, 4.03) → center (12.52, 3.86)
-# Blue: tags 19 (5.23, 3.68) + 20 (5.23, 4.03) → center (5.23, 3.86)
+# Hopper geometric centers — midpoint of all 8 AprilTags on each hopper
+# Red: X = (11.312 + 12.519) / 2 = 11.916, Y = (3.431 + 4.638) / 2 = 4.035
+# Blue: X = (4.022 + 5.229) / 2 = 4.626, Y = (3.431 + 4.638) / 2 = 4.035
 HOPPER_POSITIONS = {
-    DriverStation.Alliance.kRed: Translation2d(12.52, 3.86),
-    DriverStation.Alliance.kBlue: Translation2d(5.23, 3.86),
+    DriverStation.Alliance.kRed: Translation2d(11.916, 4.035),
+    DriverStation.Alliance.kBlue: Translation2d(4.626, 4.035),
 }
 
 # Calibrated distance (meters) → launcher RPS lookup.
 # Sorted by distance. Interpolates linearly between points.
-# Known good: 60 RPS at ~1.57m (62 inches from hopper edge).
-# Other values are placeholders — calibrate on the field.
+# Previous values were too hot — reduced 2026-03-28. Calibrate on the field.
 DISTANCE_RPS_POINTS: list[tuple[float, float]] = [
-    (1.0, 45.0),  # close range
-    (1.57, 60.0),  # known good
-    (2.5, 72.0),  # far — calibrate
-    (3.5, 80.0),  # max range — calibrate
+    (1.0, 30.0),  # close range — calibrate
+    (1.57, 40.0),  # mid range — calibrate
+    (2.5, 50.0),  # far — calibrate
+    (3.5, 60.0),  # max range — calibrate
 ]
 
 

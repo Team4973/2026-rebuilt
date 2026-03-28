@@ -8,9 +8,8 @@
 import commands2
 import typing
 
+import wpilib
 from robotcontainer import RobotContainer
-
-
 
 from phoenix6 import HootAutoReplay
 
@@ -32,13 +31,26 @@ class MyRobot(commands2.TimedCommandRobot):
         # Instantiate our RobotContainer.  This will perform all our button bindings, and put our
         # autonomous chooser on the dashboard.
         self.container = RobotContainer()
-       # self.container = powerDistributionNT()
+
+        # Publish deploy metadata to SmartDashboard
+        deploy_data = wpilib.getDeployData()
+        if deploy_data:
+            wpilib.SmartDashboard.putString(
+                "Deploy/Branch", deploy_data.get("git-branch", "unknown")
+            )
+            wpilib.SmartDashboard.putString(
+                "Deploy/SHA", deploy_data.get("git-hash", "unknown")
+            )
+            wpilib.SmartDashboard.putString(
+                "Deploy/Date", deploy_data.get("deploy-date", "unknown")
+            )
+            wpilib.SmartDashboard.putString(
+                "Deploy/User", deploy_data.get("deploy-user", "unknown")
+            )
 
         # log and replay timestamp and joystick data
         self._time_and_joystick_replay = (
-            HootAutoReplay()
-            .with_timestamp_replay()
-            .with_joystick_replay()
+            HootAutoReplay().with_timestamp_replay().with_joystick_replay()
         )
 
     def robotPeriodic(self) -> None:
