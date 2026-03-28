@@ -1,6 +1,7 @@
 from commands2 import Subsystem
 from phoenix6 import hardware, controls, configs
 from wpilib import SmartDashboard
+from subsystems import launcher_config
 
 
 class Launcher(Subsystem):
@@ -11,8 +12,8 @@ class Launcher(Subsystem):
     LAUNCHER_KV = 0.15
 
     # Speed management constants
-    DEFAULT_RPS = 60.0
-    RPS_INCREMENT = 5.0
+    DEFAULT_RPS = 54.0 
+    RPS_INCREMENT = 1.0
     MIN_RPS = 45.0
     MAX_RPS = 80.0
 

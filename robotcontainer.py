@@ -114,7 +114,7 @@ class RobotContainer:
         self._joystick.b().whileTrue(
             self.drivetrain.apply_request(
                 lambda: self._point.with_module_direction(
-                    Rotation2d(-self._joystick.getLeftY(), -self._joystick.getLeftX())
+                    Rotation2d(self._joystick.getLeftY(), self._joystick.getLeftX())
                 )
             )
         )
@@ -148,7 +148,7 @@ class RobotContainer:
         # Left trigger: Arm Launcher & Feeder
         self._joystick.leftTrigger(0.1).whileTrue(
             cmd.parallel(
-                self.feeder.run(lambda: self.feeder.set_speed(-0.25)),
+                self.feeder.run(lambda: self.feeder.set_speed(-0.5)),
                 self.launcher.run(
                     lambda: self.launcher.set_velocity(self.launcher.get_target_rps())
                 ),

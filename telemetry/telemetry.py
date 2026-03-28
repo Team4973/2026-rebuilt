@@ -1,5 +1,7 @@
 from ntcore import NetworkTableInstance
 from phoenix6 import SignalLogger, swerve, units
+from telemetry.powerdistribution.PowerDistributionHelper import PowerDistributionHelper
+from telemetry.powerdistribution.PowerDistributionNT import PowerDistributionNT
 from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, SmartDashboard
 from wpimath.geometry import Pose2d
 from wpimath.kinematics import ChassisSpeeds, SwerveModulePosition, SwerveModuleState
@@ -18,6 +20,10 @@ class Telemetry:
 
         # What to publish over networktables for telemetry
         self._inst = NetworkTableInstance.getDefault()
+        self._power_distribution = PowerDistributionNT(
+            PowerDistributionHelper(),
+            self._inst,
+        )
 
         # Robot swerve drive state
         self._drive_state_table = self._inst.getTable("DriveState")
@@ -80,6 +86,8 @@ class Telemetry:
         """
         Accept the swerve drive state and telemeterize it to SmartDashboard and SignalLogger.
         """
+        self._power_distribution.publish_values()
+
         # Telemeterize the swerve drive state
         self._drive_pose.set(state.pose)
         self._drive_speeds.set(state.speeds)
