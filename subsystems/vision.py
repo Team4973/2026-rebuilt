@@ -13,8 +13,8 @@ class Vision(Subsystem):
     # Camera mount position relative to robot center
     # Adjust these to match your actual camera placement
     ROBOT_TO_CAMERA = Transform3d(
-        Translation3d(0.3, 0.0, 0.5),  # 30cm forward, 50cm up from center
-        Rotation3d(0, -0.3, 0),  # tilted ~17 deg down
+        Translation3d(-0.1, 25.4, 0.46),  # 4cm back, 25cm left, 46cm up from center
+        Rotation3d(0, 0, 0),  # no tilt, forward looking
     )
 
     CAMERA_NAME = "front_camera"
