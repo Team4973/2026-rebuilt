@@ -30,11 +30,17 @@ class Vision(Subsystem):
         )
 
         # PhotonCamera spawns a TimeSyncServer thread that can slow down
-        # robotInit beyond the pyfrc 2-second test timeout. Skip during
-        # unit tests (detected by checking for the pytest environment).
+        # robotInit beyond the pyfrc 2-second test timeout. Only create
+        # the camera when running on a real robot or in sim mode (not tests).
+        import os
         import sys
 
-        running_tests = "pytest" in sys.modules
+        running_tests = (
+            "pytest" in sys.modules
+            or "pyfrc" in sys.modules
+            or "ROBOTPY_TEST" in os.environ
+            or os.environ.get("PYTEST_CURRENT_TEST") is not None
+        )
         if not running_tests:
             from photonlibpy import PhotonCamera, PhotonPoseEstimator
 

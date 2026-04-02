@@ -4,6 +4,8 @@
 # the WPILib BSD license file in the root directory of this project.
 #
 
+import math
+
 import commands2
 from commands2 import cmd
 from commands2.button import CommandXboxController, Trigger
@@ -18,7 +20,7 @@ from subsystems.vision import Vision
 from telemetry import telemetry
 
 from phoenix6 import swerve
-from wpilib import DriverStation
+from wpilib import DriverStation, SmartDashboard
 from wpimath.geometry import Rotation2d
 from wpimath.units import rotationsToRadians
 from wpimath.filter import SlewRateLimiter
@@ -55,6 +57,26 @@ class RobotContainer:
                 swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
             )  # Use open-loop control for drive motors
         )
+        self._face_hopper = (
+            swerve.requests.FieldCentricFacingAngle()
+            .with_deadband(self._max_speed * 0.1)
+            .with_drive_request_type(
+                swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
+            )
+        )
+        self._face_hopper_kp = -7.0
+        self._face_hopper_ki = 0.0
+        self._face_hopper_kd = 0.0
+        self._face_hopper.heading_controller.setPID(
+            self._face_hopper_kp, self._face_hopper_ki, self._face_hopper_kd
+        )
+        self._face_hopper.heading_controller.enableContinuousInput(
+            -math.pi, math.pi
+        )
+        SmartDashboard.putNumber("FaceHopper/kP", self._face_hopper_kp)
+        SmartDashboard.putNumber("FaceHopper/kI", self._face_hopper_ki)
+        SmartDashboard.putNumber("FaceHopper/kD", self._face_hopper_kd)
+
         self._brake = swerve.requests.SwerveDriveBrake()
         self._point = swerve.requests.PointWheelsAt()
 
@@ -86,17 +108,17 @@ class RobotContainer:
             self.drivetrain.apply_request(
                 lambda: (
                     self._drive.with_velocity_x(
-                        self.x_limiter.calculate(
+                        -self.x_limiter.calculate(
                             self._joystick.getLeftY() * self._max_speed
                         )
                     )  # Drive forward with negative Y (forward)
                     .with_velocity_y(
-                        self.y_limiter.calculate(
+                        -self.y_limiter.calculate(
                             self._joystick.getLeftX() * self._max_speed
                         )
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
-                        -self.rot_limiter.calculate(
+                        self.rot_limiter.calculate(
                             self._joystick.getRightX() * self._max_angular_rate
                         )
                     )  # Drive counterclockwise with negative X (left)
@@ -138,9 +160,17 @@ class RobotContainer:
             self.intake.run(lambda: self.intake.set_speed(-0.5))
         ).onFalse(self.intake.runOnce(self.intake.stop))
 
-        # Y: Intake arm down
+        # Y: Intake arm down (fast)
         self._joystick.y().whileTrue(
             self.intake_arm.run(lambda: self.intake_arm.set_speed(0.8))
+        ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
+
+        # D-pad up/down: Nudge intake arm slowly
+        self._joystick.povUp().whileTrue(
+            self.intake_arm.run(lambda: self.intake_arm.set_speed(-0.3))
+        ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
+        self._joystick.povDown().whileTrue(
+            self.intake_arm.run(lambda: self.intake_arm.set_speed(0.3))
         ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
 
         self.drivetrain.register_telemetry(self._update_telemetry)
@@ -168,10 +198,38 @@ class RobotContainer:
             self.launcher.runOnce(self.launcher.nudge_speed_up)
         )
 
+        # Right stick press: Face hopper while held (translation still from left stick)
+        self._joystick.rightStick().whileTrue(
+            self.drivetrain.apply_request(
+                lambda: (
+                    self._face_hopper
+                    .with_velocity_x(
+                        -self.x_limiter.calculate(
+                            self._joystick.getLeftY() * self._max_speed
+                        )
+                    )
+                    .with_velocity_y(
+                        -self.y_limiter.calculate(
+                            self._joystick.getLeftX() * self._max_speed
+                        )
+                    )
+                    .with_target_direction(self._heading_to_hopper())
+                )
+            )
+        )
+
         # Back button: Toggle auto/manual launcher speed mode
         self._joystick.back().onTrue(
             self.launcher.runOnce(self.launcher.toggle_auto_mode)
         )
+
+    def _heading_to_hopper(self) -> Rotation2d:
+        """Calculate the heading from the robot to the alliance hopper."""
+        hopper = get_hopper_position()
+        pose = self.drivetrain.get_state().pose
+        dx = hopper.x - pose.x
+        dy = hopper.y - pose.y
+        return Rotation2d(dx, dy)
 
     def _update_telemetry(self, state) -> None:
         """Called every drivetrain cycle. Updates telemetry and auto launcher speed."""
@@ -183,6 +241,33 @@ class RobotContainer:
         auto_rps = interpolate_rps(distance)
         self.launcher.set_auto_rps(auto_rps)
         self.launcher.set_distance_to_hopper(distance)
+
+        # Face-hopper heading telemetry (always published)
+        target = self._heading_to_hopper()
+        SmartDashboard.putNumber("FaceHopper/TargetDeg", target.degrees())
+        SmartDashboard.putNumber("FaceHopper/CurrentDeg", state.pose.rotation().degrees())
+        SmartDashboard.putNumber(
+            "FaceHopper/ErrorDeg", target.degrees() - state.pose.rotation().degrees()
+        )
+
+        # Per-module odometry debug: angle (deg) and speed (m/s) for each module
+        module_names = ["FL", "FR", "BL", "BR"]
+        for i, name in enumerate(module_names):
+            mod = state.module_states[i]
+            SmartDashboard.putNumber(f"Swerve/{name}/AngleDeg", mod.angle.degrees())
+            SmartDashboard.putNumber(f"Swerve/{name}/SpeedMps", mod.speed)
+
+        # Live-tunable face-hopper heading PID (only apply on change)
+        new_kp = SmartDashboard.getNumber("FaceHopper/kP", self._face_hopper_kp)
+        new_ki = SmartDashboard.getNumber("FaceHopper/kI", self._face_hopper_ki)
+        new_kd = SmartDashboard.getNumber("FaceHopper/kD", self._face_hopper_kd)
+        if (new_kp != self._face_hopper_kp
+                or new_ki != self._face_hopper_ki
+                or new_kd != self._face_hopper_kd):
+            self._face_hopper_kp = new_kp
+            self._face_hopper_ki = new_ki
+            self._face_hopper_kd = new_kd
+            self._face_hopper.heading_controller.setPID(new_kp, new_ki, new_kd)
 
     def getAutonomousCommand(self) -> commands2.Command:
         """

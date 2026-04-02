@@ -1,6 +1,6 @@
 from commands2 import Subsystem
 from phoenix6 import hardware, controls, configs
-from wpilib import SmartDashboard
+from wpilib import SmartDashboard, Timer
 from subsystems import launcher_config
 
 
@@ -10,6 +10,7 @@ class Launcher(Subsystem):
     # Tune these PID gains on the real robot
     LAUNCHER_KP = 0.1
     LAUNCHER_KV = 0.15
+    LAUNCHER_KS = 0.0
 
     # Speed management constants
     DEFAULT_RPS = 54.0 
@@ -23,13 +24,28 @@ class Launcher(Subsystem):
 
         # Configure Slot0 PID for velocity control
         slot0 = (
-            configs.Slot0Configs().with_k_p(self.LAUNCHER_KP).with_k_v(self.LAUNCHER_KV)
+            configs.Slot0Configs()
+            .with_k_p(self.LAUNCHER_KP)
+            .with_k_v(self.LAUNCHER_KV)
+            .with_k_s(self.LAUNCHER_KS)
         )
         motor_config = configs.TalonFXConfiguration().with_slot0(slot0)
         self._launcher_motor.configurator.apply(motor_config)
 
         self._velocity = controls.VelocityVoltage(0)
         self._duty_cycle = controls.DutyCycleOut(0)
+
+        # Track current PID gains for live tuning
+        self._kp = self.LAUNCHER_KP
+        self._kv = self.LAUNCHER_KV
+        self._ks = self.LAUNCHER_KS
+        SmartDashboard.putNumber("Launcher/kP", self._kp)
+        SmartDashboard.putNumber("Launcher/kV", self._kv)
+        SmartDashboard.putNumber("Launcher/kS", self._ks)
+
+        # Spin-up tracking
+        self._spinup_start_time: float | None = None
+        self._last_at_target = False
 
         # Adjustable target speed
         self._target_rps = self.DEFAULT_RPS
@@ -83,14 +99,46 @@ class Launcher(Subsystem):
         self._target_rps = self.DEFAULT_RPS
 
     def periodic(self) -> None:
-        SmartDashboard.putNumber("Launcher/TargetRPS", self.get_target_rps())
+        target_rps = self.get_target_rps()
+        actual_rps = self._launcher_motor.get_velocity().value
+        error_rps = target_rps - actual_rps
+        at_target = abs(error_rps) < 2.0 and target_rps > 0
+
+        SmartDashboard.putNumber("Launcher/TargetRPS", target_rps)
         SmartDashboard.putNumber("Launcher/ManualRPS", self._target_rps)
         SmartDashboard.putNumber("Launcher/AutoRPS", self._auto_rps)
-        SmartDashboard.putNumber(
-            "Launcher/ActualRPS",
-            self._launcher_motor.get_velocity().value,
-        )
+        SmartDashboard.putNumber("Launcher/ActualRPS", actual_rps)
+        SmartDashboard.putNumber("Launcher/ErrorRPS", error_rps)
+        SmartDashboard.putBoolean("Launcher/AtTarget", at_target)
         SmartDashboard.putString(
             "Launcher/Mode", "Auto" if self._auto_mode else "Manual"
         )
         SmartDashboard.putNumber("Launcher/DistanceToHopper", self._distance_to_hopper)
+
+        # Spin-up time tracking: measure time from first movement to reaching target
+        if target_rps > 0 and abs(actual_rps) > 1.0 and self._spinup_start_time is None:
+            self._spinup_start_time = Timer.getFPGATimestamp()
+        if at_target and not self._last_at_target and self._spinup_start_time is not None:
+            elapsed = Timer.getFPGATimestamp() - self._spinup_start_time
+            SmartDashboard.putNumber("Launcher/SpinUpTimeSec", elapsed)
+        if target_rps == 0 or actual_rps < 1.0:
+            self._spinup_start_time = None
+        self._last_at_target = at_target
+
+        # Live-tunable launcher velocity PID (only apply on change)
+        new_kp = SmartDashboard.getNumber("Launcher/kP", self._kp)
+        new_kv = SmartDashboard.getNumber("Launcher/kV", self._kv)
+        new_ks = SmartDashboard.getNumber("Launcher/kS", self._ks)
+        if new_kp != self._kp or new_kv != self._kv or new_ks != self._ks:
+            self._kp = new_kp
+            self._kv = new_kv
+            self._ks = new_ks
+            slot0 = (
+                configs.Slot0Configs()
+                .with_k_p(new_kp)
+                .with_k_v(new_kv)
+                .with_k_s(new_ks)
+            )
+            self._launcher_motor.configurator.apply(
+                configs.TalonFXConfiguration().with_slot0(slot0)
+            )
