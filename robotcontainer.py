@@ -64,7 +64,7 @@ class RobotContainer:
                 swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
             )
         )
-        self._face_hopper_kp = 7.0
+        self._face_hopper_kp = -7.0
         self._face_hopper_ki = 0.0
         self._face_hopper_kd = 0.0
         self._face_hopper.heading_controller.setPID(
