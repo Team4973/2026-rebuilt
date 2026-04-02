@@ -160,9 +160,17 @@ class RobotContainer:
             self.intake.run(lambda: self.intake.set_speed(-0.5))
         ).onFalse(self.intake.runOnce(self.intake.stop))
 
-        # Y: Intake arm down
+        # Y: Intake arm down (fast)
         self._joystick.y().whileTrue(
             self.intake_arm.run(lambda: self.intake_arm.set_speed(0.8))
+        ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
+
+        # D-pad up/down: Nudge intake arm slowly
+        self._joystick.povUp().whileTrue(
+            self.intake_arm.run(lambda: self.intake_arm.set_speed(-0.3))
+        ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
+        self._joystick.povDown().whileTrue(
+            self.intake_arm.run(lambda: self.intake_arm.set_speed(0.3))
         ).onFalse(self.intake_arm.runOnce(self.intake_arm.stop))
 
         self.drivetrain.register_telemetry(self._update_telemetry)
