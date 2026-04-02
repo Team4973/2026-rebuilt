@@ -118,7 +118,7 @@ class RobotContainer:
                         )
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
-                        -self.rot_limiter.calculate(
+                        self.rot_limiter.calculate(
                             self._joystick.getRightX() * self._max_angular_rate
                         )
                     )  # Drive counterclockwise with negative X (left)
