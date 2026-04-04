@@ -155,10 +155,14 @@ class RobotContainer:
             )
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
-        # Right bumper: Hold Intake
+        # Right bumper: Hold Intake, reverse briefly on release to unstick fuel
         self._joystick.rightBumper().whileTrue(
             self.intake.run(lambda: self.intake.set_speed(-0.5))
-        ).onFalse(self.intake.runOnce(self.intake.stop))
+        ).onFalse(
+            self.intake.run(lambda: self.intake.set_speed(0.2))
+            .withTimeout(0.5)
+            .andThen(self.intake.runOnce(self.intake.stop))
+        )
 
         # Y: Intake arm down (fast)
         self._joystick.y().whileTrue(
