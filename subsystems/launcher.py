@@ -49,7 +49,7 @@ class Launcher(Subsystem):
 
         # Adjustable target speed
         self._target_rps = self.DEFAULT_RPS
-        self._auto_mode = False
+        self._auto_mode = True
         self._auto_rps = self.DEFAULT_RPS
         self._distance_to_hopper = 0.0
 

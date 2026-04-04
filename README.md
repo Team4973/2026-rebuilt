@@ -1,8 +1,13 @@
-# Swerve Test 2026
+# 2026-rebuilt
 
-RobotPy swerve drivetrain project using CTRE Phoenix 6 hardware.
-## Motor Ids
-- 47 is launcher
+Team 4973's code for the 2026 "Rebuilt" FRC game, using RobotPy & CTRE Hardware.
+## Device Ids
+- 0 through 5: Misc Devices (PDH [0], IMU [2])
+- 6 through 9: Swerve Turn Motors
+- 10 through 13: Swerve CANCoders
+- 16 through 19: Swerve Drive Motors
+- 30 through 35: Arm/Intake/Shooter
+
 
 ## Robot Controls
 
@@ -12,13 +17,7 @@ RobotPy swerve drivetrain project using CTRE Phoenix 6 hardware.
 | Right stick X | Rotation |
 | A button (hold) | Brake mode |
 | B button (hold) | Point wheels at joystick direction |
-| Left bumper | Reset field-centric heading |
-| Right trigger | Launcher variable speed |
-| Right bumper (hold) | Launcher full speed |
-| Back + Y | SysId dynamic forward |
-| Back + X | SysId dynamic reverse |
-| Start + Y | SysId quasistatic forward |
-| Start + X | SysId quasistatic reverse |
+| X | Reset field-centric heading |
 
 ## Setup
 

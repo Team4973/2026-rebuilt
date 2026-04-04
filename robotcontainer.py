@@ -229,7 +229,12 @@ class RobotContainer:
         pose = self.drivetrain.get_state().pose
         dx = hopper.x - pose.x
         dy = hopper.y - pose.y
-        return Rotation2d(dx, dy)
+        field_heading = Rotation2d(dx, dy)
+        # convert the field heading if we're the red alliance since operator POV is reversed
+        alliance = DriverStation.getAlliance()
+        if alliance == DriverStation.Alliance.kRed:
+            return field_heading - Rotation2d.fromDegrees(180)
+        return field_heading
 
     def _update_telemetry(self, state) -> None:
         """Called every drivetrain cycle. Updates telemetry and auto launcher speed."""
