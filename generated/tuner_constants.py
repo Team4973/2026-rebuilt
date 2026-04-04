@@ -101,11 +101,15 @@ class TunerConstants:
     _pigeon_id = 2
 
     # These are only used for simulation
-    _steer_inertia: units.kilogram_square_meter = 0.01
-    _drive_inertia: units.kilogram_square_meter = 0.01
+    # Calculated from robot mass 128 lbs (58.06 kg) with bumpers,
+    # wheel radius 1.93", drive ratio 6.746, steer ratio 21.429.
+    # drive_inertia = (mass * r^2) / (4 * ratio^2) ≈ 0.00077, rounded up.
+    # Friction voltages estimated for carpet; refine with SysId data.
+    _steer_inertia: units.kilogram_square_meter = 0.00001
+    _drive_inertia: units.kilogram_square_meter = 0.001
     # Simulated voltage necessary to overcome friction
-    _steer_friction_voltage: units.volt = 0.2
-    _drive_friction_voltage: units.volt = 0.2
+    _steer_friction_voltage: units.volt = 0.25
+    _drive_friction_voltage: units.volt = 0.3
 
     drivetrain_constants = (
         swerve.SwerveDrivetrainConstants()

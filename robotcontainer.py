@@ -10,6 +10,7 @@ import commands2
 from commands2 import cmd
 from commands2.button import CommandXboxController, Trigger
 
+from autos import build_auto_chooser
 from generated.tuner_constants import TunerConstants
 from subsystems.launcher import Launcher
 from subsystems.launcher_config import get_hopper_position, interpolate_rps
@@ -90,6 +91,8 @@ class RobotContainer:
         self.intake = Intake()
         self.intake_arm = Intake_Arm()
         self.vision = Vision(self.drivetrain)
+
+        self._auto_chooser = build_auto_chooser(self)
 
         # Configure the button bindings
         self.configureButtonBindings()
@@ -280,22 +283,4 @@ class RobotContainer:
 
         :returns: the command to run in autonomous
         """
-        # Simple drive forward auton
-        idle = swerve.requests.Idle()
-        return cmd.sequence(
-            # Reset our field centric heading to match the robot
-            # facing away from our alliance station wall (0 deg).
-            self.drivetrain.runOnce(
-                lambda: self.drivetrain.seed_field_centric(Rotation2d.fromDegrees(0))
-            ),
-            # Then slowly drive forward (away from us) for 5 seconds.
-            self.drivetrain.apply_request(
-                lambda: (
-                    self._drive.with_velocity_x(0.5)
-                    .with_velocity_y(0)
-                    .with_rotational_rate(0)
-                )
-            ).withTimeout(5.0),
-            # Finally idle for the rest of auton
-            self.drivetrain.apply_request(lambda: idle),
-        )
+        return self._auto_chooser.getSelected()
