@@ -160,8 +160,8 @@ class RobotContainer:
             self.intake.run(lambda: self.intake.set_speed(-0.5))
         ).onFalse(
             self.intake.run(lambda: self.intake.set_speed(0.2))
+            .finallyDo(lambda interrupted: self.intake.stop())
             .withTimeout(0.5)
-            .andThen(self.intake.runOnce(self.intake.stop))
         )
 
         # Y: Intake arm down (fast)
