@@ -20,10 +20,18 @@ from subsystems.vision import Vision
 from telemetry import telemetry
 
 from phoenix6 import swerve
-from wpilib import DriverStation, SmartDashboard
+from wpilib import DriverStation, SmartDashboard, Timer
 from wpimath.geometry import Rotation2d
 from wpimath.units import rotationsToRadians
 from wpimath.filter import SlewRateLimiter
+
+
+# Robot demo-mode settings
+# Set DEMO_MODE to True before deploying when practicing with a slower robot.
+DEMO_MODE = False
+DEMO_DRIVE_SPEED_FACTOR = 0.25
+DEMO_TURN_SPEED_FACTOR = 0.25
+DEMO_LAUNCHER_SPEED_FACTOR = 0.5
 
 
 class RobotContainer:
@@ -39,11 +47,21 @@ class RobotContainer:
         self.y_limiter = SlewRateLimiter(4)
         self.rot_limiter = SlewRateLimiter(4)
 
+        drive_speed_factor = DEMO_DRIVE_SPEED_FACTOR if DEMO_MODE else 1.0
+        turn_speed_factor = DEMO_TURN_SPEED_FACTOR if DEMO_MODE else 1.0
+        self._launcher_speed_factor = (
+            DEMO_LAUNCHER_SPEED_FACTOR if DEMO_MODE else 1.0
+        )
+        self._next_demo_message_time: float | None = None
+        if DEMO_MODE:
+            print("Robot code started in Demo Mode.")
+            self._next_demo_message_time = Timer.getFPGATimestamp() + 10.0
+
         self._max_speed = (
-            1.0 * TunerConstants.speed_at_12_volts
+            drive_speed_factor * TunerConstants.speed_at_12_volts
         )  # speed_at_12_volts desired top speed
         self._max_angular_rate = rotationsToRadians(
-            0.75
+            0.75 * turn_speed_factor
         )  # 3/4 of a rotation per second max angular velocity
 
         # Setting up bindings for necessary control of the swerve drive platform
@@ -93,6 +111,18 @@ class RobotContainer:
 
         # Configure the button bindings
         self.configureButtonBindings()
+
+    def periodic(self) -> None:
+        """Print the demo-mode reminder every 10 seconds while demo mode is active."""
+        if (
+            DEMO_MODE
+            and self._next_demo_message_time is not None
+            and Timer.getFPGATimestamp() >= self._next_demo_message_time
+        ):
+            print(
+                "Demo Mode enabled. While Demo Mode is enabled, the robot's drive & shoot speeds will be reduced. These factors can be adjusted in robotcontainer.py ."
+            )
+            self._next_demo_message_time += 10.0
 
     def configureButtonBindings(self) -> None:
         """
@@ -151,7 +181,7 @@ class RobotContainer:
         # Right trigger: Run launcher at adjustable target velocity
         self._joystick.rightTrigger(0.1).whileTrue(
             self.launcher.run(
-                lambda: self.launcher.set_velocity(self.launcher.get_target_rps())
+                lambda: self.launcher.set_velocity(self._launcher_target_rps())
             )
         ).onFalse(self.launcher.runOnce(self.launcher.stop))
 
@@ -180,7 +210,7 @@ class RobotContainer:
             cmd.parallel(
                 self.feeder.run(lambda: self.feeder.set_speed(-0.5)),
                 self.launcher.run(
-                    lambda: self.launcher.set_velocity(self.launcher.get_target_rps())
+                    lambda: self.launcher.set_velocity(self._launcher_target_rps())
                 ),
             )
         ).onFalse(
@@ -235,6 +265,10 @@ class RobotContainer:
         if alliance == DriverStation.Alliance.kRed:
             return field_heading - Rotation2d.fromDegrees(180)
         return field_heading
+
+    def _launcher_target_rps(self) -> float:
+        """Return the launcher target after applying the demo-mode scale."""
+        return self.launcher.get_target_rps() * self._launcher_speed_factor
 
     def _update_telemetry(self, state) -> None:
         """Called every drivetrain cycle. Updates telemetry and auto launcher speed."""

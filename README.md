@@ -58,6 +58,15 @@ python3 -m robotpy sim
    - Use right stick to rotate
    - Press A to brake
 
+## Demo Mode
+Demo Mode can be invoked by adjusting 
+```
+DEMO_MODE = true
+```
+on line #31 in robotcontainer.py . Modify DEMO_DRIVE_SPEED_FACTOR,DEMO_TURN_SPEED_FACTOR, DEMO_LAUNCHER_SPEED_FACTOR to control the drive, turn, and launcher speed factors. 
+
+This is useful for interactive demonstrations when speed safeguards are needed, however this should be disabled for competition use. The code will print period messages when this mode is enabled.
+
 ## Deploying to Robot
 
 When connected to the robot (via WiFi or USB):
@@ -76,6 +85,7 @@ Then in Driver Station:
 1. Connect to robot
 2. Enable Teleop
 3. Test controls
+
 
 ## Running Tests
 
